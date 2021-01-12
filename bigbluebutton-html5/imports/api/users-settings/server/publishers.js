@@ -42,7 +42,7 @@ function userSettings() {
     });
   }
 
-  Logger.debug(`Publishing user settings for user=${requesterUserId}`);
+    Logger.debug('Publishing user settings', { requesterUserId });
 
   function transformUserSetting(uSetting) {
     if (uSetting.userId === requesterUserId) {

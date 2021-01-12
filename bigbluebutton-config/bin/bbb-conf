@@ -171,7 +171,7 @@ fi
 if LANG=c ifconfig | grep -q 'venet0:0'; then
     IP=$(ifconfig | grep -v '127.0.0.1' | grep -E "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | tail -1 | cut -d: -f2 | awk '{ print $1}')
 else
-    IP=$(hostname -I | cut -f1 -d' ')
+    IP=$(ifconfig $(route | grep ^default | sed "s/.* //") | awk '/inet /{ print $2}' | cut -d: -f2)
 fi
 
 if [ -z "$IP" ]; then
@@ -324,7 +324,7 @@ stop_bigbluebutton () {
     fi
 
     if [ -f /usr/share/red5/red5-server.jar ]; then
-	BBB_RED5="red5"
+      BBB_RED5="red5"
     fi
 
     if [ -d $TOMCAT_DIR ]; then
@@ -734,20 +734,22 @@ check_configuration() {
         fi
     fi
 
-    if [ "$IP" != "$NGINX_IP" ]; then
-        if [ "$IP" != "$HOSTS" ]; then
-            echo "# IP does not match:"
-            echo "#                           IP from ifconfig: $IP"
-            echo "#   /etc/nginx/sites-available/bigbluebutton: $NGINX_IP"
-        fi
-    fi
+    # Depreciated: BigBlueButton must be installed with a valid hostname, so comparing a hostnae to IP address
+    # does not provide any useful information.
+    #if [ "$IP" != "$NGINX_IP" ]; then
+    #    if [ "$IP" != "$HOSTS" ]; then
+    #        echo "# IP does not match:"
+    #        echo "#                           IP from ifconfig: $IP"
+    #        echo "#   /etc/nginx/sites-available/bigbluebutton: $NGINX_IP"
+    #    fi
+    #fi
 
     if [ -f /var/lib/tomcat7/webapps/demo/bbb_api_conf.jsp ]; then
         #
         # Make sure the shared secret for the API matches the server
         #
         SECRET_PROPERTIES=$(cat ${SERVLET_DIR}/WEB-INF/classes/bigbluebutton.properties | grep -v '#' | tr -d '\r' | sed -n '/securitySalt/{s/.*=//;p}')
-        SECRET_DEMO=$(cat /var/lib/tomcat7/webapps/demo/bbb_api_conf.jsp | grep -v '^//' | tr -d '\r' | sed -n '/salt[ ]*=/{s/.*=[ ]*"//;s/".*//g;p}')
+        SECRET_DEMO=$(cat ${TOMCAT_DIR}/webapps/demo/bbb_api_conf.jsp | grep -v '^//' | tr -d '\r' | sed -n '/salt[ ]*=/{s/.*=[ ]*"//;s/".*//g;p}')
 
         if [ "$SECRET_PROPERTIES" != "$SECRET_DEMO" ]; then
             echo "#"
@@ -761,12 +763,12 @@ check_configuration() {
             echo
         fi
 
-        API_IP=$(cat /var/lib/tomcat7/webapps/demo/bbb_api_conf.jsp | grep -v '^//' | sed -n '/String BigBlueButtonURL/{s/.*http[s]*:\/\///;s/\/.*//;p}' | tr -d '\015')
-        if [ "$IP" != "$API_IP" ]; then
-            echo "# Warning: API URL IPs do not match host:"
+        if ! grep -q https ${TOMCAT_DIR}/webapps/demo/bbb_api_conf.jsp; then
+            echo
+            echo "# Warning: Did not detect https for API demos in "
             echo "#"
-            echo "#                                IP from ifconfig: $IP"
-            echo "#  ${TOMCAT_DIR}/demo/bbb_api_conf.jsp: $API_IP"
+            echo "#    ${TOMCAT_DIR}/webapps/demo/bbb_api_conf.jsp"
+            echo "#"
             echo
         fi
     fi
@@ -904,6 +906,26 @@ check_configuration() {
         echo
       fi
     fi
+
+    CHECK_STUN=$(xmlstarlet sel -t -m '//X-PRE-PROCESS[@cmd="set" and starts-with(@data, "external_rtp_ip=")]' -v @data $FREESWITCH_VARS | sed 's/external_rtp_ip=stun://g')
+    if [ "$CHECK_STUN" == "stun.freeswitch.org" ]; then
+       echo
+       echo "# Warning: Detected FreeSWITCH is using default stun.freeswitch.org server.  See"
+       echo "#"
+       echo "#     http://docs.bigbluebutton.org/2.2/troubleshooting.html#freeswitch-using-default-stun-server"
+       echo "#"
+       echo
+    fi  
+
+    if ! which ufw > /dev/null 2>&1; then
+       echo
+       echo "# Warning: No firewall detected.  Recommend using setting up a firewall for your server"
+       echo "#"
+       echo "#     http://docs.bigbluebutton.org/2.2/troubleshooting.html#freeswitch-using-default-stun-server"
+       echo "#"
+       echo
+    fi
+
 }
 
 update_gstreamer() {
@@ -1288,7 +1310,8 @@ check_state() {
       fi
     fi
 
-    if [ "$SIP_NGINX_IP" != $IP ]; then
+    if [ "$(yq r /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml public.media.sipjsHackViaWs)" == "false" ]; then
+      if [ "$SIP_NGINX_IP" != $IP ]; then
         if [ "$SIP_NGINX_IP" != "\$freeswitch_addr" ]; then
             echo "# Warning: The setting of $SIP_NGINX_IP for proxy_pass in"
             echo "#"
@@ -1298,6 +1321,7 @@ check_state() {
             echo "# (This is OK if you've manually changed the values)"
             echo
         fi
+      fi
     fi
 
     VARS_IP=$(cat $FREESWITCH_VARS | sed -n '/"local_ip_v4/{s/.*local_ip_v4=//;s/".*//;p}')
@@ -1455,28 +1479,30 @@ check_state() {
         echo "#"
     fi
 
-    if [ "$PROTOCOL" == "https" ]; then
-      if ! cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1 | grep -q https; then
-        echo "# Warning: You have this server defined for https, but in"
-        echo "#"
-        echo "#   $SIP_CONFIG"
-        echo "#"
-        echo "#  did not find the use of https in definition for proxy_pass"
-        echo "#"
-        echo "#    $(cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1)"
-        echo "#"
-      fi
+    if [ "$(yq r /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml public.media.sipjsHackViaWs)" != "true" ]; then
+      if [ "$PROTOCOL" == "https" ]; then
+        if ! cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1 | grep -q https; then
+          echo "# Warning: You have this server defined for https, but in"
+          echo "#"
+          echo "#   $SIP_CONFIG"
+          echo "#"
+          echo "#  did not find the use of https in definition for proxy_pass"
+          echo "#"
+          echo "#    $(cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1)"
+          echo "#"
+        fi
 
-      if ! cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1 | grep -q 7443; then
-        echo
-        echo "# Warning: You have this server defined for https, but in"
-        echo "#"
-        echo "#   $SIP_CONFIG"
-        echo "#"
-        echo "#  did not find the use of port 7443 in definition for proxy_pass"
-        echo "#"
-        echo "#    $(cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1)"
-        echo "#"
+        if ! cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1 | grep -q 7443; then
+          echo
+          echo "# Warning: You have this server defined for https, but in"
+          echo "#"
+          echo "#   $SIP_CONFIG"
+          echo "#"
+          echo "#  did not find the use of port 7443 in definition for proxy_pass"
+          echo "#"
+          echo "#    $(cat $SIP_CONFIG |  grep -v '#' | grep proxy_pass | head -n 1)"
+          echo "#"
+        fi
       fi
     fi
 
@@ -1585,7 +1611,7 @@ if [ $CHECK ]; then
 
     echo
     echo "/etc/nginx/sites-available/bigbluebutton (nginx)"
-    echo "                       server name: $NGINX_IP"
+    echo "                       server_name: $NGINX_IP"
 
     PORT=$(cat /etc/nginx/sites-available/bigbluebutton | grep -v '#' | sed -n '/listen/{s/.*listen[ ]*//;s/;//;p}' | grep -v ssl | tr --delete '\n' | sed 's/\[/, \[/g' | sed 's/0$/0\n/g')
     echo "                              port: $PORT"
@@ -1593,7 +1619,7 @@ if [ $CHECK ]; then
         echo "                              port: 443 ssl"
     fi
 
-    if [ -f /etc/bigbluebutton/nginx/client.nginx ]; then
+    if [ ]; then # Depreciated
       BBB_CLIENT_DOC_ROOT=$(cat /etc/bigbluebutton/nginx/client.nginx | grep -v '#' | grep \/client -A 1 | head -n 2 | grep root | sed -n '{s/[ \t]*root[ ]*//;s/;//;p}')
       echo "                    bbb-client dir: $BBB_CLIENT_DOC_ROOT"
 
@@ -1654,6 +1680,7 @@ if [ $CHECK ]; then
         echo
         echo "$SIP_CONFIG (sip.nginx)"
         echo "                        proxy_pass: $SIP_NGINX_IP"
+        echo "                          protocol: $(cat /etc/bigbluebutton/nginx/sip.nginx | grep -v \# | sed -n '/proxy_pass/{s/.*proxy_pass [ ]*//;s/:.*//;p}' | head -n 1)"
     fi
 
     if [ -f $KURENTO_CONFIG ]; then
@@ -1675,6 +1702,16 @@ if [ $CHECK ]; then
         echo "                             build: $(yq r $HTML5_CONFIG public.app.html5ClientBuild)"
         echo "                        kurentoUrl: $(yq r $HTML5_CONFIG public.kurento.wsUrl)"
         echo "                  enableListenOnly: $(yq r $HTML5_CONFIG public.kurento.enableListenOnly)"
+        echo "                    sipjsHackViaWs: $(yq r $HTML5_CONFIG public.media.sipjsHackViaWs)"
+     fi
+
+     TURN=/usr/share/bbb-web/WEB-INF/classes/spring/turn-stun-servers.xml
+     STUN="$(xmlstarlet sel -N x="http://www.springframework.org/schema/beans" -t -m '_:beans/_:bean[@class="org.bigbluebutton.web.services.turn.StunTurnService"]/_:property[@name="stunServers"]/_:set/_:ref' -v @bean $TURN)"
+
+     if [ ! -z "$STUN" ]; then
+        echo
+        echo "$TURN (STUN Server)"
+        echo "                              $(xmlstarlet sel -N x="http://www.springframework.org/schema/beans" -t -m "_:beans/_:bean[@id=\"$STUN\"]/_:constructor-arg[@index=\"0\"]" -v @value $TURN)"
      fi
 
      if [ "$DISTRIB_CODENAME" == "xenial" ]; then
@@ -1720,8 +1757,9 @@ if [ $ZIP ]; then
     tar rf  $TMP_LOG_FILE /var/log/kurento-media-server > /dev/null 2>&1
     tar rf  $TMP_LOG_FILE /var/log/mongodb              > /dev/null 2>&1
     tar rf  $TMP_LOG_FILE /var/log/redis                > /dev/null 2>&1
-    tar rf  $TMP_LOG_FILE /var/log/nginx/error.log      > /dev/null 2>&1
-    tar rfh $TMP_LOG_FILE /opt/freeswitch/var/log/freeswitch/ > /dev/null 2>&1
+    tar rf  $TMP_LOG_FILE /var/log/nginx/error.log*     > /dev/null 2>&1
+    tar rf  $TMP_LOG_FILE /var/log/nginx/bigbluebutton.access.log*    > /dev/null 2>&1
+    tar rfh $TMP_LOG_FILE /opt/freeswitch/var/log/freeswitch/         > /dev/null 2>&1
 
     if [ -f /var/log/nginx/html5-client.log ]; then
         tar rf $TMP_LOG_FILE /var/log/nginx/html5-client.log* > /dev/null 2>&1
@@ -1994,16 +2032,17 @@ if [ -n "$HOST" ]; then
         #fi
     fi
 
-    ESL_PASSWORD=$(xmlstarlet sel -t -m 'configuration/settings/param[@name="password"]' -v @value /opt/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml)
+    #
+    # Update ESL passwords in three configuration files
+    #
+    ESL_PASSWORD=$(cat /usr/share/bbb-fsesl-akka/conf/application.conf | grep password | head -n 1 | sed 's/.*="//g' | sed 's/"//g')
     if [ "$ESL_PASSWORD" == "ClueCon" ]; then
         ESL_PASSWORD=$(openssl rand -hex 8)
-        echo "Changing default password for FreeSWITCH Event Socket Layer (see /opt/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml)"
+        sudo sed -i "s/ClueCon/$ESL_PASSWORD/g" /usr/share/bbb-fsesl-akka/conf/application.conf
     fi
-    # Update all references to ESL password
 
-    sudo sed -i "s/ClueCon/$ESL_PASSWORD/g" /opt/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml
-    sudo sed -i "s/ClueCon/$ESL_PASSWORD/g" /usr/share/bbb-fsesl-akka/conf/application.conf
     sudo yq w -i /usr/local/bigbluebutton/bbb-webrtc-sfu/config/default.yml freeswitch.esl_password "$ESL_PASSWORD"
+    sudo xmlstarlet edit --inplace --update 'configuration/settings//param[@name="password"]/@value' --value $ESL_PASSWORD /opt/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml
 
 
     echo "Restarting the BigBlueButton $BIGBLUEBUTTON_RELEASE ..."
@@ -2101,7 +2140,7 @@ if [ $CLEAN ]; then
         rm -f /var/log/bbb-fsesl-akka/*
     fi
 
-	if [ -d /var/log/bbb-apps-akka ]; then
+  if [ -d /var/log/bbb-apps-akka ]; then
         rm -f /var/log/bbb-apps-akka/*
     fi
 

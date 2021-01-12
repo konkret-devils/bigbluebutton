@@ -3,10 +3,14 @@ import Redis from 'redis';
 import { Meteor } from 'meteor/meteor';
 import { EventEmitter2 } from 'eventemitter2';
 import { check } from 'meteor/check';
+import fs from 'fs';
 import Logger from './logger';
+import Metrics from './metrics';
 
 // Fake meetingId used for messages that have no meetingId
 const NO_MEETING_ID = '_';
+
+const { queueMetrics } = Meteor.settings.private.redis.metrics;
 
 const makeEnvelope = (channel, eventName, header, body, routing) => {
   const envelope = {
@@ -27,17 +31,12 @@ const makeEnvelope = (channel, eventName, header, body, routing) => {
   return JSON.stringify(envelope);
 };
 
-const makeDebugger = enabled => (message) => {
-  if (!enabled) return;
-  Logger.debug(`REDIS: ${message}`);
-};
-
 class MeetingMessageQueue {
-  constructor(eventEmitter, asyncMessages = [], debug = () => { }) {
+  constructor(eventEmitter, asyncMessages = [], redisDebugEnabled = false) {
     this.asyncMessages = asyncMessages;
     this.emitter = eventEmitter;
     this.queue = new PowerQueue();
-    this.debug = debug;
+    this.redisDebugEnabled = redisDebugEnabled;
 
     this.handleTask = this.handleTask.bind(this);
     this.queue.taskHandler = this.handleTask;
@@ -53,6 +52,7 @@ class MeetingMessageQueue {
     const isAsync = this.asyncMessages.includes(channel)
       || this.asyncMessages.includes(eventName);
 
+    const beginHandleTimestamp = Date.now();
     let called = false;
 
     check(eventName, String);
@@ -60,11 +60,21 @@ class MeetingMessageQueue {
 
     const callNext = () => {
       if (called) return;
-      this.debug(`${eventName} completed ${isAsync ? 'async' : 'sync'}`);
+      if (this.redisDebugEnabled) {
+        Logger.debug(`Redis: ${eventName} completed ${isAsync ? 'async' : 'sync'}`);
+      }
       called = true;
+
+      if (queueMetrics) {
+        const queueId = meetingId || NO_MEETING_ID;
+        const dataLength = JSON.stringify(data).length;
+
+        Metrics.processEvent(queueId, eventName, dataLength, beginHandleTimestamp);
+      }
+
       const queueLength = this.queue.length();
       if (queueLength > 100) {
-        Logger.error(`prev queue size=${queueLength} `);
+        Logger.warn(`Redis: MeetingMessageQueue for meetingId=${meetingId} has queue size=${queueLength} `);
       }
       next();
     };
@@ -75,7 +85,9 @@ class MeetingMessageQueue {
     };
 
     try {
-      this.debug(`${JSON.stringify(data.parsedMessage.core)} emitted`);
+      if (this.redisDebugEnabled) {
+        Logger.debug(`Redis: ${JSON.stringify(data.parsedMessage.core)} emitted`);
+      }
 
       if (isAsync) {
         callNext();
@@ -120,12 +132,15 @@ class RedisPubSub {
       this.sub = Redis.createClient({ host, port });
     }
 
+    if (queueMetrics) {
+      Metrics.startDumpFile();
+    }
+
     this.emitter = new EventEmitter2();
     this.mettingsQueues = {};
 
     this.handleSubscribe = this.handleSubscribe.bind(this);
     this.handleMessage = this.handleMessage.bind(this);
-    this.debug = makeDebugger(this.config.debug);
   }
 
   init() {
@@ -138,12 +153,14 @@ class RedisPubSub {
       this.sub.psubscribe(channel);
     });
 
-    this.debug(`Subscribed to '${channelsToSubscribe}'`);
+    if (this.redisDebugEnabled) {
+      Logger.debug(`Redis: Subscribed to '${channelsToSubscribe}'`);
+    }
   }
 
   updateConfig(config) {
     this.config = Object.assign({}, this.config, config);
-    this.debug = makeDebugger(this.config.debug);
+    this.redisDebugEnabled = this.config.debug;
   }
 
 
@@ -174,14 +191,20 @@ class RedisPubSub {
       if (eventName === 'CheckAlivePongSysMsg') {
         return;
       }
-      this.debug(`${eventName} skipped`);
+      if (this.redisDebugEnabled) {
+        Logger.debug(`Redis: ${eventName} skipped`);
+      }
       return;
     }
 
     const queueId = meetingId || NO_MEETING_ID;
 
+    if (queueMetrics) {
+      Metrics.addEvent(queueId, eventName, message.length);
+    }
+
     if (!(queueId in this.mettingsQueues)) {
-      this.mettingsQueues[meetingId] = new MeetingMessageQueue(this.emitter, async, this.debug);
+      this.mettingsQueues[meetingId] = new MeetingMessageQueue(this.emitter, async, this.redisDebugEnabled);
     }
 
     this.mettingsQueues[meetingId].add({

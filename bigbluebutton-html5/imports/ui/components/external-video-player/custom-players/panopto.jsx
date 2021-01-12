@@ -1,4 +1,4 @@
-const MATCH_URL = /https?\:\/\/(([a-zA-Z]+\.)?hosted\.panopto\.com\/Panopto)\/Pages\/Viewer\.aspx\?id=([-a-zA-Z0-9]+)/;
+const MATCH_URL = /https?\:\/\/([^\/]+\/Panopto)(\/Pages\/Viewer\.aspx\?id=)([-a-zA-Z0-9]+)/;
 
 export class Panopto {
 

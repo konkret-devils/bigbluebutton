@@ -97,7 +97,7 @@ function users(role) {
     },
   };
 
-  Logger.debug(`Publishing Users for ${meetingId} ${requesterUserId}`);
+  Logger.debug('Publishing Users', { meetingId, requesterUserId });
 
   return Users.find(selector, options);
 }

@@ -11,15 +11,15 @@ import logger from '/imports/startup/client/logger';
 import Users from '/imports/api/users';
 import { hiddenByMagicCap } from '/imports/ui/services/users-settings';
 import { Session } from 'meteor/session';
-import { FormattedMessage } from 'react-intl';
 import IntlStartup from './intl';
 import Meetings, { RecordMeetings } from '../../api/meetings';
 import AppService from '/imports/ui/components/app/service';
 import Breakouts from '/imports/api/breakouts';
 import AudioService from '/imports/ui/components/audio/service';
+import { FormattedMessage } from 'react-intl';
 import { notify } from '/imports/ui/services/notification';
 import deviceInfo from '/imports/utils/deviceInfo';
-import getFromUserSettings from '../../ui/services/users-settings';
+import getFromUserSettings from '/imports/ui/services/users-settings';
 
 const CHAT_CONFIG = Meteor.settings.public.chat;
 const CHAT_ENABLED = CHAT_CONFIG.enabled;
@@ -340,8 +340,10 @@ const BaseContainer = withTracker(() => {
             // in the following line...
             if (!hiddenByMagicCap(newDocument)) {
               if (userJoinAudioAlerts) {
-                const audio = new Audio(`${Meteor.settings.public.app.cdn + Meteor.settings.public.app.basename}/resources/sounds/userJoin.mp3`);
-                audio.play();
+                AudioService.playAlertSound(`${Meteor.settings.public.app.cdn
+                    + Meteor.settings.public.app.basename}`
+                    + '/resources/sounds/userJoin.mp3');
+
               }
 
               if (userJoinPushAlerts) {

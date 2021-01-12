@@ -59,6 +59,7 @@ export default function handleValidateAuthToken({ body }, meetingId) {
 
         /* Logic migrated from validateAuthToken method ( postponed to only run in case of success response ) - Begin */
         const sessionId = `${meetingId}--${userId}`;
+
         methodInvocationObject.setUserId(sessionId);
 
         const User = Users.findOne({
@@ -102,23 +103,21 @@ export default function handleValidateAuthToken({ body }, meetingId) {
     },
   };
 
-  const cb = (err, numChanged) => {
-    if (err) {
-      return Logger.error(`Validating auth token: ${err}`);
-    }
+  try {
+    const numberAffected = Users.update(selector, modifier);
 
-    if (numChanged) {
+    if (numberAffected) {
       if (valid) {
         const sessionUserId = `${meetingId}-${userId}`;
         const currentConnectionId = User.connectionId ? User.connectionId : false;
         clearOtherSessions(sessionUserId, currentConnectionId);
       }
 
-      return Logger.info(`Validated auth token as ${valid} user=${userId} meeting=${meetingId}`);
+      Logger.info(`Validated auth token as ${valid} user=${userId} meeting=${meetingId}`);
+    } else {
+      Logger.info('No auth to validate');
     }
-
-    return Logger.info('No auth to validate');
-  };
-
-  Users.update(selector, modifier, cb);
+  } catch (err) {
+    Logger.error(`Validating auth token: ${err}`);
+  }
 }

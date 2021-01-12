@@ -112,6 +112,13 @@ need_root() {
         fi
 }
 
+need_root_or_bigbluebutton() {
+	if [ $EUID != 0 -a "$USER" != 'bigbluebutton' ]; then
+		echo "Need to be user root or bigbluebutton to run this option"
+      exit 1
+   fi
+}
+
 print_header() {
         if [ ! $HEADER ]; then
                 echo
@@ -212,7 +219,7 @@ while [ $# -gt 0 ]; do
         fi
 		
 	if [ "$1" = "-delete" -o "$1" = "--delete" ]; then
-                need_root
+                need_root_or_bigbluebutton
                 if [ ! -z "${2}" ]; then
                         MEETING_ID="${2}"
                         shift
@@ -385,6 +392,7 @@ if [ $DELETE ]; then
   rm -rf /usr/share/red5/webapps/video-broadcast/streams/$MEETING_ID
   rm -f /var/bigbluebutton/screenshare/$MEETING_ID*.flv
   rm -f /var/freeswitch/meetings/$MEETING_ID*.wav
+  rm -f /var/freeswitch/meetings/$MEETING_ID*.opus
   rm -rf /var/bigbluebutton/$MEETING_ID
 fi
 
@@ -416,6 +424,7 @@ if [ $DELETEALL ]; then
   find /usr/share/red5/webapps/video-broadcast/streams -name "*.flv" -exec rm '{}' \;
   rm -f /var/bigbluebutton/screenshare/*.flv
   rm -f /var/freeswitch/meetings/*.wav
+  rm -f /var/freeswitch/meetings/*.opus
 
   for meeting in $(ls /var/bigbluebutton | grep "^[0-9a-f]\{40\}-[[:digit:]]\{13\}$"); do
     echo "deleting: $meeting"

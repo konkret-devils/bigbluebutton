@@ -93,6 +93,11 @@ class ApiController {
     log.debug CONTROLLER_NAME + "#${API_CALL}"
     log.debug request.getParameterMap().toMapString()
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -131,6 +136,20 @@ class ApiController {
       return
     }
 
+    // Ensure unique TelVoice. Uniqueness is not guaranteed by paramsProcessorUtil.
+    if (!params.voiceBridge) {
+      // Try up to 10 times. We should find a valid telVoice quickly unless
+      // the server hosts ~100k meetings (default 5-digit telVoice)
+      for (int i in 1..10) {
+        String telVoice = paramsProcessorUtil.processTelVoice("");
+        if (!meetingService.getNotEndedMeetingWithTelVoice(telVoice)) {
+          params.voiceBridge = telVoice;
+          break;
+        }
+      }
+      // Still no unique voiceBridge found? Let createMeeting handle it.
+    }
+
     Meeting newMeeting = paramsProcessorUtil.processCreateParams(params)
 
     if (meetingService.createMeeting(newMeeting)) {
@@ -162,6 +181,14 @@ class ApiController {
         }
 
         return
+      } else {
+        Meeting existingTelVoice = meetingService.getNotEndedMeetingWithTelVoice(newMeeting.getTelVoice());
+        Meeting existingWebVoice = meetingService.getNotEndedMeetingWithWebVoice(newMeeting.getWebVoice());
+        if (existingTelVoice != null || existingWebVoice != null) {
+          log.error "VoiceBridge already in use by another meeting (different meetingId)"
+          errors.nonUniqueVoiceBridgeError()
+          respondWithErrors(errors)
+        }
       }
     }
   }
@@ -174,6 +201,11 @@ class ApiController {
     String API_CALL = 'join'
     log.debug CONTROLLER_NAME + "#${API_CALL}"
     ApiErrors errors = new ApiErrors()
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
@@ -244,7 +276,6 @@ class ApiController {
 
     // Do we have a name for the user joining? If none, complain.
     if (!StringUtils.isEmpty(params.fullName)) {
-      params.fullName = StringUtils.strip(params.fullName);
       if (StringUtils.isEmpty(params.fullName)) {
         errors.missingParamError("fullName");
       }
@@ -431,14 +462,9 @@ class ApiController {
       us.avatarURL = meeting.defaultAvatarURL
     }
 
-    // Register user into the meeting.
-    meetingService.registerUser(us.meetingID, us.internalUserId, us.fullname, us.role, us.externUserID,
-        us.authToken, us.avatarURL, us.guest, us.authed, guestStatusVal)
+    String meetingId = meeting.getInternalId()
 
-    // Validate if the maxParticipants limit has been reached based on registeredUsers. If so, complain.
-    // when maxUsers is set to 0, the validation is ignored
-    int maxUsers = meeting.getMaxUsers();
-    if (maxUsers > 0 && meeting.getRegisteredUsers().size() >= maxUsers) {
+    if (hasReachedMaxParticipants(meeting, us)) {
       // BEGIN - backward compatibility
       invalid("maxParticipantsReached", "The number of participants allowed for this meeting has been reached.", REDIRECT_RESPONSE);
       return
@@ -448,6 +474,20 @@ class ApiController {
       respondWithErrors(errors, REDIRECT_RESPONSE);
       return;
     }
+
+    // Register user into the meeting.
+    meetingService.registerUser(
+        us.meetingID,
+        us.internalUserId,
+        us.fullname,
+        us.role,
+        us.externUserID,
+        us.authToken,
+        us.avatarURL,
+        us.guest,
+        us.authed,
+        guestStatusVal
+    )
 
     //Identify which of these to logs should be used. sessionToken or user-token
     log.info("Session sessionToken for " + us.fullname + " [" + session[sessionToken] + "]")
@@ -547,6 +587,11 @@ class ApiController {
     String API_CALL = 'isMeetingRunning'
     log.debug CONTROLLER_NAME + "#${API_CALL}"
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -623,8 +668,12 @@ class ApiController {
    ************************************/
   def end = {
     String API_CALL = "end"
-
     log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
@@ -748,6 +797,11 @@ class ApiController {
     String API_CALL = "getMeetingInfo"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -831,6 +885,11 @@ class ApiController {
     String API_CALL = "getMeetings"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -888,6 +947,11 @@ class ApiController {
   def getSessionsHandler = {
     String API_CALL = "getSessions"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
@@ -963,6 +1027,11 @@ class ApiController {
   def setPollXML = {
     String API_CALL = "setPollXML"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -1050,6 +1119,11 @@ class ApiController {
     String API_CALL = "setConfigXML"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
       return
@@ -1129,6 +1203,11 @@ class ApiController {
     String API_CALL = "getDefaultConfigXML"
     ApiErrors errors = new ApiErrors();
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -1168,26 +1247,15 @@ class ApiController {
     String API_CALL = 'configXML'
     log.debug CONTROLLER_NAME + "#${API_CALL}"
 
-    String logoutUrl = paramsProcessorUtil.getDefaultLogoutUrl()
-    boolean reject = false
-    String sessionToken = null
-    UserSession us = null
-
-    if (StringUtils.isEmpty(params.sessionToken)) {
-      log.info("No session for user in conference.")
-      reject = true
-    } else {
-      sessionToken = StringUtils.strip(params.sessionToken)
-      log.info("Getting ConfigXml for SessionToken = " + sessionToken)
-      if (!session[sessionToken]) {
-        reject = true
-      } else {
-        us = meetingService.getUserSessionWithAuthToken(sessionToken);
-        if (us == null) reject = true
-      }
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
     }
 
-    if (reject) {
+    String logoutUrl = paramsProcessorUtil.getDefaultLogoutUrl()
+    boolean reject = false
+    String sessionToken = sanitizeSessionToken(params.sessionToken)
+    if (!hasValidSession(sessionToken)) {
       response.addHeader("Cache-Control", "no-cache")
       withFormat {
         xml {
@@ -1195,6 +1263,7 @@ class ApiController {
         }
       }
     } else {
+      UserSession us = getUserSession(sessionToken)
       if (StringUtils.isEmpty(us.configXML)) {
         // BEGIN - backward compatibility
         invalid("noConfigFound", "We could not find a config for this request.", REDIRECT_RESPONSE);
@@ -1230,46 +1299,34 @@ class ApiController {
   def guestWaitHandler = {
     String API_CALL = 'guestWait'
     log.debug CONTROLLER_NAME + "#${API_CALL}"
-    ApiErrors errors = new ApiErrors()
-    boolean reject = false;
 
-    if (StringUtils.isEmpty(params.sessionToken)) {
-      log.debug("SessionToken is missing.")
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
     }
 
-    String sessionToken = StringUtils.strip(params.sessionToken)
+    ApiErrors errors = new ApiErrors()
+    boolean reject = false;
+    String sessionToken = sanitizeSessionToken(params.sessionToken)
 
-    UserSession us = null;
+    UserSession us = getUserSession(sessionToken);
     Meeting meeting = null;
-    UserSession userSession = null;
 
-    if (sessionToken == null || meetingService.getUserSessionWithAuthToken(sessionToken) == null) {
+    if (us == null) {
       log.debug("No user with session token.")
       reject = true;
     } else {
-      us = meetingService.getUserSessionWithAuthToken(sessionToken);
       meeting = meetingService.getMeeting(us.meetingID);
       if (meeting == null || meeting.isForciblyEnded()) {
         log.debug("Meeting not found.")
         reject = true
       }
-      userSession = meetingService.getUserSessionWithAuthToken(sessionToken)
-      if (userSession == null) {
-        log.debug("Session with user not found.")
-        reject = true
-      }
-
     }
 
     // Determine the logout url so we can send the user there.
-    String logoutUrl = paramsProcessorUtil.getDefaultLogoutUrl()
-
-    if (us != null) {
-      logoutUrl = us.logoutUrl
-    }
+    String logoutUrl = us != null ? us.logoutUrl : paramsProcessorUtil.getDefaultLogoutUrl()
 
     if (reject) {
-      log.info("No session for user in conference.")
       response.addHeader("Cache-Control", "no-cache")
       withFormat {
         json {
@@ -1305,7 +1362,7 @@ class ApiController {
         clientURL = params.clientURL;
       }
 
-      String guestWaitStatus = userSession.guestStatus
+      String guestWaitStatus = us.guestStatus
 
       log.debug("GuestWaitStatus = " + guestWaitStatus)
 
@@ -1391,50 +1448,44 @@ class ApiController {
    * ENTER API
    ***********************************************/
   def enter = {
+    String API_CALL = 'enter'
+    log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     boolean reject = false;
 
-    if (StringUtils.isEmpty(params.sessionToken)) {
-      println("SessionToken is missing.")
-    }
-
-    String sessionToken = StringUtils.strip(params.sessionToken)
-
-    UserSession us = null;
+    String sessionToken = sanitizeSessionToken(params.sessionToken)
+    UserSession us = getUserSession(sessionToken);
     Meeting meeting = null;
-    UserSession userSession = null;
 
-    Boolean allowEnterWithoutSession = false;
-    // Depending on configuration, allow ENTER requests to proceed without session
-    if (paramsProcessorUtil.getAllowRequestsWithoutSession()) {
-      allowEnterWithoutSession = paramsProcessorUtil.getAllowRequestsWithoutSession();
-    }
+    String respMessage = "Session not found."
 
-    String respMessage = "Session " + sessionToken + " not found."
-
-    if (!sessionToken || meetingService.getUserSessionWithAuthToken(sessionToken) == null || (!allowEnterWithoutSession && !session[sessionToken])) {
+    if (!hasValidSession(sessionToken)) {
       reject = true;
-      respMessage = "Session " + sessionToken + " not found."
     } else {
-      us = meetingService.getUserSessionWithAuthToken(sessionToken);
-      if (us == null) {
-        respMessage = "Session " + sessionToken + " not found."
+      meeting = meetingService.getMeeting(us.meetingID);
+      if (meeting == null || meeting.isForciblyEnded()) {
         reject = true
+        respMessage = "Meeting not found or ended for session."
       } else {
-        meeting = meetingService.getMeeting(us.meetingID);
-        if (meeting == null || meeting.isForciblyEnded()) {
-          reject = true
-          respMessage = "Meeting not found or ended for session " + sessionToken + "."
+        if (hasReachedMaxParticipants(meeting, us)) {
+          reject = true;
+          respMessage = "The number of participants allowed for this meeting has been reached.";
+        } else {
+          meeting.userEntered(us.internalUserId);
         }
-        if (us.guestStatus.equals(GuestPolicy.DENY)) {
-          respMessage = "User denied for user with session " + sessionToken + "."
-          reject = true
-        }
+      }
+      if (us.guestStatus.equals(GuestPolicy.DENY)) {
+        respMessage = "User denied for user with session."
+        reject = true
       }
     }
 
     if (reject) {
-      log.info("No session for user in conference.")
-
       // Determine the logout url so we can send the user there.
       String logoutUrl = paramsProcessorUtil.getDefaultLogoutUrl()
 
@@ -1449,6 +1500,7 @@ class ApiController {
           builder.response {
             returncode RESP_CODE_FAILED
             message respMessage
+            sessionToken
             logoutURL logoutUrl
           }
           render(contentType: "application/json", text: builder.toPrettyString())
@@ -1547,27 +1599,23 @@ class ApiController {
    * STUN/TURN API
    ***********************************************/
   def stuns = {
+    String API_CALL = 'stuns'
+    log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     boolean reject = false;
 
-    UserSession us = null;
+    String sessionToken = sanitizeSessionToken(params.sessionToken)
+    UserSession us = getUserSession(sessionToken);
     Meeting meeting = null;
-    String sessionToken = null
 
-    if (!StringUtils.isEmpty(params.sessionToken)) {
-      sessionToken = StringUtils.strip(params.sessionToken)
-      println("Session token = [" + sessionToken + "]")
-    }
-
-    Boolean allowStunsWithoutSession = false;
-    // Depending on configuration, allow STUNS requests to proceed without session
-    if (paramsProcessorUtil.getAllowRequestsWithoutSession()) {
-      allowStunsWithoutSession = paramsProcessorUtil.getAllowRequestsWithoutSession();
-    }
-
-    if (sessionToken == null || meetingService.getUserSessionWithAuthToken(sessionToken) == null || (!allowStunsWithoutSession && !session[sessionToken])) {
+    if (!hasValidSession(sessionToken)) {
       reject = true;
     } else {
-      us = meetingService.getUserSessionWithAuthToken(sessionToken);
       meeting = meetingService.getMeeting(us.meetingID);
       if (meeting == null || meeting.isForciblyEnded()) {
         reject = true
@@ -1575,8 +1623,6 @@ class ApiController {
     }
 
     if (reject) {
-      log.info("No session for user in conference.")
-
       String logoutUrl = paramsProcessorUtil.getDefaultLogoutUrl()
 
       response.addHeader("Cache-Control", "no-cache")
@@ -1632,13 +1678,15 @@ class ApiController {
    * SIGNOUT API
    *************************************************/
   def signOut = {
+    String API_CALL = 'signOut'
+    log.debug CONTROLLER_NAME + "#${API_CALL}"
 
-    String sessionToken = null
-
-    if (!StringUtils.isEmpty(params.sessionToken)) {
-      sessionToken = StringUtils.strip(params.sessionToken)
-      println("SessionToken = " + sessionToken)
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
     }
+
+    String sessionToken = sanitizeSessionToken(params.sessionToken)
 
     Meeting meeting = null;
 
@@ -1682,6 +1730,11 @@ class ApiController {
   def getRecordingsHandler = {
     String API_CALL = "getRecordings"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
@@ -1756,6 +1809,11 @@ class ApiController {
   def publishRecordings = {
     String API_CALL = "publishRecordings"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
@@ -1838,6 +1896,11 @@ class ApiController {
     String API_CALL = "deleteRecordings"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
       invalid("checksumError", "You did not pass the checksum security check")
@@ -1907,6 +1970,11 @@ class ApiController {
   def updateRecordingsHandler = {
     String API_CALL = "updateRecordings"
     log.debug CONTROLLER_NAME + "#${API_CALL}"
+
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
 
     // BEGIN - backward compatibility
     if (StringUtils.isEmpty(params.checksum)) {
@@ -1979,13 +2047,17 @@ class ApiController {
   def uploadDocuments(conf) { //
     log.debug("ApiController#uploadDocuments(${conf.getInternalId()})");
 
+    //sanitizeInput
+    params.each {
+      key, value -> params[key] = sanitizeInput(value)
+    }
+
     String requestBody = request.inputStream == null ? null : request.inputStream.text;
     requestBody = StringUtils.isEmpty(requestBody) ? null : requestBody;
 
     if (requestBody == null) {
       downloadAndProcessDocument(presentationService.defaultUploadedPresentation, conf.getInternalId(), true /* default presentation */, '');
     } else {
-      log.debug "Request body: \n" + requestBody;
       def xml = new XmlSlurper().parseText(requestBody);
       xml.children().each { module ->
         log.debug("module config found: [${module.@name}]");
@@ -2153,6 +2225,86 @@ class ApiController {
         render(text: responseBuilder.buildMeeting(meeting, msgKey, msg, RESP_CODE_SUCCESS), contentType: "text/xml")
       }
     }
+  }
+
+  def getUserSession(token) {
+    if (token == null) {
+      return null
+    }
+
+    UserSession us = meetingService.getUserSessionWithAuthToken(token)
+    if (us == null) {
+      log.info("Cannot find UserSession for token ${token}")
+    }
+
+    return us
+  }
+
+  private def sanitizeInput (input) {
+    if(input == null)
+      return
+
+    if(!("java.lang.String".equals(input.getClass().getName())))
+      return input
+
+    StringUtils.strip(input.replaceAll("\\p{Cntrl}", ""));
+  }
+
+  def sanitizeSessionToken(param) {
+    if (param == null) {
+      log.info("sanitizeSessionToken: token is null")
+      return null
+    }
+
+    if (StringUtils.isEmpty(param)) {
+      log.info("sanitizeSessionToken: token is empty")
+      return null
+    }
+
+    return StringUtils.strip(param)
+  }
+
+  private Boolean hasValidSession(token) {
+    UserSession us = getUserSession(token)
+    if (us == null) {
+      return false
+    }
+
+    if (!session[token]) {
+      log.info("Session for token ${token} not found")
+
+      Boolean allowRequestsWithoutSession = paramsProcessorUtil.getAllowRequestsWithoutSession()
+      if (!allowRequestsWithoutSession) {
+        log.info("Meeting related to ${token} doesn't allow requests without session")
+        return false
+      }
+    }
+
+    log.info("Token ${token} is valid")
+    return true
+  }
+
+  // Validate maxParticipants constraint
+  private Boolean hasReachedMaxParticipants(meeting, us) {
+    // Meeting object calls it maxUsers to build up the drama
+    int maxParticipants = meeting.getMaxUsers();
+    // When is set to 0, the validation is ignored
+    Boolean enabled = maxParticipants > 0;
+    // Users refreshing page or reconnecting must be identified
+    Boolean rejoin = meeting.getUserById(us.internalUserId) != null;
+    // Users that passed enter once, still not joined but somehow re-entered
+    Boolean reenter = meeting.getEnteredUserById(us.internalUserId) != null;
+    // Users that already joined the meeting
+    int joinedUsers = meeting.getUsers().size()
+    // Users that are entering the meeting
+    int enteredUsers = meeting.getEnteredUsers().size()
+
+    Boolean reachedMax = (joinedUsers + enteredUsers) >= maxParticipants;
+    if (enabled && !rejoin && !reenter && reachedMax) {
+      return true;
+    }
+
+    return false;
   }
 
   private void respondWithErrors(errorList, redirectResponse = false) {
