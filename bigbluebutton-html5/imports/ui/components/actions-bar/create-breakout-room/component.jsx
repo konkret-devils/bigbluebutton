@@ -10,6 +10,7 @@ import Modal from '/imports/ui/components/modal/fullscreen/component';
 import { withModalMounter } from '/imports/ui/components/modal/service';
 import HoldButton from '/imports/ui/components/presentation/presentation-toolbar/zoom-tool/holdButton/component';
 import SortList from './sort-user-list/component';
+import { hiddenByMagicCap } from '/imports/ui/services/users-settings';
 import styles from './styles';
 
 const ROLE_MODERATOR = Meteor.settings.public.user.role_moderator;
@@ -288,9 +289,9 @@ class BreakoutRoom extends PureComponent {
   setRoomUsers() {
     const { users, getUsersNotAssigned } = this.props;
     const { users: stateUsers } = this.state;
-    const stateUsersId = stateUsers.map(user => user.userId);
+    const stateUsersId = stateUsers.filter(user => !hiddenByMagicCap(user)).map(user => user.userId);
     const roomUsers = getUsersNotAssigned(users)
-      .filter(user => !stateUsersId.includes(user.userId))
+      .filter(user => !stateUsersId.includes(user.userId) && !hiddenByMagicCap(user))
       .map(user => ({
         userId: user.userId,
         userName: user.name,
@@ -316,7 +317,7 @@ class BreakoutRoom extends PureComponent {
 
   getUserByRoom(room) {
     const { users } = this.state;
-    return users.filter(user => user.room === room);
+    return users.filter(user => user.room === room && !hiddenByMagicCap(user));
   }
 
   removeRoomUsers() {
