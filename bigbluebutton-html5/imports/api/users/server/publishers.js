@@ -15,6 +15,17 @@ function currentUser() {
   check(meetingId, String);
   check(requesterUserId, String);
 
+  const connectionId = this.connection.id;
+  const onCloseConnection = Meteor.bindEnvironment(() => {
+    try {
+      userLeaving(meetingId, requesterUserId, connectionId);
+    } catch (e) {
+      Logger.error(`Exception while executing userLeaving: ${e}`);
+    }
+  });
+
+  this._session.socket.on('close', _.debounce(onCloseConnection, 100));
+
   const selector = {
     meetingId,
     userId: requesterUserId,
@@ -45,12 +56,13 @@ function users(role) {
     return Users.find({ meetingId: '' });
   }
 
-  if (!this.userId) {
+  /*if (!this.userId) {
     return Users.find({ meetingId: '' });
-  }
-  const { meetingId, userId } = tokenValidation;
+  }*/
 
-  Logger.debug(`Publishing Users for ${meetingId} ${userId}`);
+  const { meetingId, requesterUserId } = extractCredentials(tokenValidation.userId);
+
+  Logger.debug(`Publishing Users for ${meetingId} ${requesterUserId}`);
 
   const selector = {
     $or: [
@@ -58,21 +70,40 @@ function users(role) {
     ],
   };
 
-  const User = Users.findOne({ userId, meetingId }, { fields: { role: 1 } });
+  // eslint-disable-next-line max-len
+  const User = Users.findOne({ userId: requesterUserId, meetingId },
+    {
+      fields: {
+        role: 1,
+        'breakoutProps.isBreakoutUser': 1,
+        'breakoutProps.parentId': 1,
+        extId: 1,
+      },
+    });
+
   if (!!User && User.role === ROLE_MODERATOR) {
     selector.$or.push({
       'breakoutProps.isBreakoutUser': true,
       'breakoutProps.parentId': meetingId,
+      connectionStatus: 'online',
+    });
+  }
+
+  if (!!User && User.breakoutProps.isBreakoutUser) {
+    selector.$or.push({
+      meetingId: User.breakoutProps.parentId,
+      userId: User.extId.split('-')[0],
     });
   }
 
   const options = {
     fields: {
       authToken: false,
+      lastPing: false,
     },
   };
 
-  Logger.debug('Publishing Users', { meetingId, userId });
+  Logger.debug('Publishing Users', { meetingId, requesterUserId });
 
   return Users.find(selector, options);
 }

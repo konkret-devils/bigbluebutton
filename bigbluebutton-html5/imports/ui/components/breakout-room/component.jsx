@@ -7,6 +7,7 @@ import logger from '/imports/startup/client/logger';
 import { styles } from './styles';
 import BreakoutRoomContainer from './breakout-remaining-time/container';
 import VideoService from '/imports/ui/components/video-provider/service';
+import {hiddenByMagicCap} from "../../services/users-settings";
 
 const intlMessages = defineMessages({
   breakoutTitle: {
