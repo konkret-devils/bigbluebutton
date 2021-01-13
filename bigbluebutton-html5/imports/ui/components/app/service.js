@@ -27,7 +27,7 @@ const validIOSVersion = () => {
   return true;
 };
 
-export default {
+export {
   getFontSize,
   meetingIsBreakout,
   getBreakoutRooms,
