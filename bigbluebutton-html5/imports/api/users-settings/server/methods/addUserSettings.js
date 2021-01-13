@@ -95,7 +95,7 @@ export default function addUserSettings(settings) {
     return UserSettings.find({ meetingId: '' });
   }
 
-  const { meetingId, requesterUserId: userId } = tokenValidation;//extractCredentials(tokenValidation.userId);
+  const { meetingId, userId } = tokenValidation;
 
   let parameters = {};
 
