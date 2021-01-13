@@ -27,6 +27,7 @@ import App from './component';
 import NavBarContainer from '../nav-bar/container';
 import ActionsBarContainer from '../actions-bar/container';
 import MediaContainer from '../media/container';
+import * as Session from "lodash";
 
 const propTypes = {
   navbar: PropTypes.node,

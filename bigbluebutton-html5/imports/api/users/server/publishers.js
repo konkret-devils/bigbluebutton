@@ -4,15 +4,19 @@ import Logger from '/imports/startup/server/logger';
 import AuthTokenValidation, { ValidationStates } from '/imports/api/auth-token-validation';
 import { extractCredentials } from '/imports/api/common/server/helpers';
 import userLeaving from "./methods/userLeaving";
+import UserSettings from "../../users-settings";
 
 const ROLE_MODERATOR = Meteor.settings.public.user.role_moderator;
 
 function currentUser() {
 
-  if (!this.userId) {
+  const tokenValidation = AuthTokenValidation.findOne({ connectionId: this.connection.id });
+
+  if (!tokenValidation || tokenValidation.validationStatus !== ValidationStates.VALIDATED) {
     return Users.find({ meetingId: '' });
   }
-  const { meetingId, requesterUserId } = extractCredentials(this.userId);
+
+  const { meetingId, requesterUserId: userId } = tokenValidation;//extractCredentials(tokenValidation.userId);
 
   check(meetingId, String);
   check(requesterUserId, String);
@@ -58,11 +62,7 @@ function users(role) {
     return Users.find({ meetingId: '' });
   }
 
-  /*if (!this.userId) {
-    return Users.find({ meetingId: '' });
-  }*/
-
-  const { meetingId, requesterUserId } = extractCredentials(tokenValidation.userId);
+  const { meetingId, requesterUserId: userId } = tokenValidation;
 
   Logger.debug(`Publishing Users for ${meetingId} ${requesterUserId}`);
 
