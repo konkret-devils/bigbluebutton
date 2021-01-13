@@ -2,6 +2,9 @@ import { check } from 'meteor/check';
 import addUserSetting from '/imports/api/users-settings/server/modifiers/addUserSetting';
 import logger from '/imports/startup/server/logger';
 import { extractCredentials } from '/imports/api/common/server/helpers';
+import AuthTokenValidation, {ValidationStates} from "../../../auth-token-validation";
+import Logger from "/imports/startup/server/logger";
+import UserSettings from "../../index";
 
 const oldParameters = {
   askForFeedbackOnLogout: 'bbb_ask_for_feedback_on_logout',
@@ -85,7 +88,14 @@ function valueParser(val) {
 export default function addUserSettings(settings) {
   check(settings, [Object]);
 
-  const { meetingId, requesterUserId: userId } = extractCredentials(this.userId);
+  const tokenValidation = AuthTokenValidation.findOne({ connectionId: this.connection.id });
+
+  if (!tokenValidation || tokenValidation.validationStatus !== ValidationStates.VALIDATED) {
+    Logger.warn(`Publishing UserSettings was requested by unauth connection ${this.connection.id}`);
+    return UserSettings.find({ meetingId: '' });
+  }
+
+  const { meetingId, requesterUserId: userId } = extractCredentials(tokenValidation.userId);
 
   let parameters = {};
 

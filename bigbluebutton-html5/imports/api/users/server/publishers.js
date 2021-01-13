@@ -8,6 +8,7 @@ import userLeaving from "./methods/userLeaving";
 const ROLE_MODERATOR = Meteor.settings.public.user.role_moderator;
 
 function currentUser() {
+
   if (!this.userId) {
     return Users.find({ meetingId: '' });
   }
