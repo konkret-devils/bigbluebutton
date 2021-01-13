@@ -3,6 +3,7 @@ import { Meteor } from 'meteor/meteor';
 import Logger from '/imports/startup/server/logger';
 import AuthTokenValidation, { ValidationStates } from '/imports/api/auth-token-validation';
 import { extractCredentials } from '/imports/api/common/server/helpers';
+import userLeaving from "./methods/userLeaving";
 
 const ROLE_MODERATOR = Meteor.settings.public.user.role_moderator;
 
