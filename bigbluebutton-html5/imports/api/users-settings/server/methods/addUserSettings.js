@@ -91,7 +91,7 @@ export default function addUserSettings(settings) {
   const tokenValidation = AuthTokenValidation.findOne({ connectionId: this.connection.id });
 
   if (!tokenValidation || tokenValidation.validationStatus !== ValidationStates.VALIDATED) {
-    Logger.warn(`Publishing UserSettings was requested by unauth connection ${this.connection.id}`);
+    Logger.warn(`Adding UserSettings was requested by unauth connection ${this.connection.id}`);
     return UserSettings.find({ meetingId: '' });
   }
 
