@@ -19,7 +19,7 @@ function userSettings() {
     Logger.warn(`Publishing UserSettings was requested by unauth connection ${this.connection.id}`);
     return UserSettings.find({ meetingId: '' });
   }
-  const { meetingId, requesterUserId } = extractCredentials(tokenValidation.userId);
+  const { meetingId, userId: requesterUserId } = tokenValidation;
 
   const currentUser = User.findOne({ userId: requesterUserId });
 
