@@ -18,8 +18,10 @@ function currentUser() {
 
   const { meetingId, requesterUserId: userId } = tokenValidation;//extractCredentials(tokenValidation.userId);
 
+  const uidJson = JSON.stringify(tokenValidation);
+
   Logger.info(`CCC : this.user = ${this.userId}`);
-  Logger.info(`CCC : tokenVal. = ${tokenValidation}`);
+  Logger.info(`CCC : tokenVal. = ${uidJson}`);
 
   check(meetingId, String);
   check(requesterUserId, String);
