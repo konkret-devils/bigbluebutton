@@ -1,5 +1,7 @@
+import _ from 'lodash';
 import Users from '/imports/api/users';
 import { Meteor } from 'meteor/meteor';
+import { check } from 'meteor/check';
 import Logger from '/imports/startup/server/logger';
 import AuthTokenValidation, { ValidationStates } from '/imports/api/auth-token-validation';
 import { extractCredentials } from '/imports/api/common/server/helpers';
@@ -38,6 +40,7 @@ function publishCurrentUser(...args) {
 
 Meteor.publish('current-user', publishCurrentUser);
 
+// eslint-disable-next-line no-unused-vars
 function users(role) {
   const tokenValidation = AuthTokenValidation.findOne({ connectionId: this.connection.id });
 
@@ -60,11 +63,28 @@ function users(role) {
     intId: { $exists: true }
   };
 
-  const User = Users.findOne({ userId, meetingId }, { fields: { role: 1 } });
+  // eslint-disable-next-line max-len
+  const User = Users.findOne({ userId, meetingId },
+    {
+      fields: {
+        role: 1,
+        'breakoutProps.isBreakoutUser': 1,
+        'breakoutProps.parentId': 1,
+        extId: 1,
+      },
+    });
+
   if (!!User && User.role === ROLE_MODERATOR) {
     selector.$or.push({
       'breakoutProps.isBreakoutUser': true,
       'breakoutProps.parentId': meetingId,
+    });
+  }
+
+  if (!!User && User.breakoutProps.isBreakoutUser) {
+    selector.$or.push({
+      meetingId: User.breakoutProps.parentId,
+      userId: User.extId.split('-')[0],
     });
   }
 
