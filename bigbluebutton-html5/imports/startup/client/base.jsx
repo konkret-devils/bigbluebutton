@@ -58,6 +58,14 @@ const fullscreenChangedEvents = [
   'MSFullscreenChange',
 ];
 
+function showUserListOnLogin() {
+  return getFromUserSettings('bbb_show_participants_on_login', true) && !deviceInfo.type().isPhone;
+}
+
+function showChatOnLogin() {
+  return CHAT_ENABLED && getFromUserSettings('bbb_show_public_chat_on_login', !Meteor.settings.public.chat.startClosed);
+}
+
 class Base extends Component {
   static handleFullscreenChange() {
     if (document.fullscreenElement
@@ -80,22 +88,14 @@ class Base extends Component {
     this.updateLoadingState = this.updateLoadingState.bind(this);
   }
 
-  showUserListOnLogin() {
-    return getFromUserSettings('bbb_show_participants_on_login', true) && !deviceInfo.type().isPhone;
-  }
-
-  showChatOnLogin() {
-    return CHAT_ENABLED && getFromUserSettings('bbb_show_public_chat_on_login', !Meteor.settings.public.chat.startClosed);
-  }
-
   componentDidMount() {
     const { animations } = this.props;
 
     if (animations) HTML.classList.add('animationsEnabled');
     if (!animations) HTML.classList.add('animationsDisabled');
 
-    if (this.showUserListOnLogin()) {
-      if (this.showChatOnLogin()) {
+    if (showUserListOnLogin()) {
+      if (showChatOnLogin()) {
         Session.set('openPanel', 'chat');
         Session.set('idChatOpen', PUBLIC_CHAT_ID);
       }else{
@@ -406,8 +406,8 @@ const BaseContainer = withTracker(() => {
     });
   }
 
-  if (this.showUserListOnLogin()) {
-    if (this.showChatOnLogin()) {
+  if (showUserListOnLogin()) {
+    if (showChatOnLogin()) {
       Session.setDefault('openPanel', 'chat');
       Session.setDefault('idChatOpen', PUBLIC_CHAT_ID);
     } else {
