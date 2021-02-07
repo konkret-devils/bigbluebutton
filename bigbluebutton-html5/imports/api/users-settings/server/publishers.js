@@ -49,7 +49,7 @@ function userSettings() {
   Logger.debug('Publishing UserSettings', { meetingId, userId });
 
   function transformUserSetting(uSetting) {
-    if (uSetting.userId === requesterUserId) {
+    if (uSetting.userId === userId) {
       return uSetting;
     }
     if (otherUsersExportSettings.includes(uSetting.setting)) {
