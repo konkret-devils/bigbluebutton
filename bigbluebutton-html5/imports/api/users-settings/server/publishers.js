@@ -21,7 +21,7 @@ function userSettings() {
 
   const { meetingId, userId } = tokenValidation;
 
-  const currentUser = User.findOne({ userId });
+  const currentUser = User.findOne({ meetingId, userId });
 
   if (currentUser && currentUser.breakoutProps.isBreakoutUser) {
     const { parentId } = currentUser.breakoutProps;
@@ -46,40 +46,38 @@ function userSettings() {
     });
   }
 
-  Logger.debug('Publishing UserSettings', { meetingId, userId });
+  function isOtherUsersExportSetting(uSetting) {
+    return uSetting.userId !== userId
+        && otherUsersExportSettings.includes(uSetting.setting);
+  }
 
   function transformUserSetting(uSetting) {
-    if (uSetting.userId === userId) {
-      return uSetting;
-    }
-    if (otherUsersExportSettings.includes(uSetting.setting)) {
-      return {
-        meetingId,
-        userId: uSetting.userId,
-        setting: uSetting.setting,
-        value: uSetting.value,
-      };
-    }
     return {
-      meetingId: '',
-      userId: '',
-      setting: '',
+      meetingId,
+      userId: uSetting.userId,
+      setting: uSetting.setting,
+      value: uSetting.value,
     };
   }
 
-  Logger.debug('Publishing UserSettings', { meetingId, userId });
   const self = this;
 
   const observer = UserSettings.find({ meetingId }).observe({
-    added(document) {
-      self.added('users-settings', document._id, transformUserSetting(document));
+    added(uSetting) {
+      if (isOtherUsersExportSetting(uSetting)) {
+        self.added('users-settings', document._id, transformUserSetting(uSetting));
+      }
     },
     // eslint-disable-next-line no-unused-vars
-    changed(newDocument, oldDocument) {
-      self.changed('users-settings', newDocument._id, transformUserSetting(newDocument));
+    changed(newUSetting, oldUSetting) {
+      if (isOtherUsersExportSetting(oldUSetting)) {
+        self.changed('users-settings', oldUSetting._id, transformUserSetting(newUSetting));
+      }
     },
-    removed(oldDocument) {
-      self.removed('users-settings', oldDocument._id);
+    removed(uSetting) {
+      if (isOtherUsersExportSetting(uSetting)) {
+        self.removed('users-settings', uSetting._id);
+      }
     },
   });
 
@@ -88,6 +86,10 @@ function userSettings() {
   });
 
   self.ready();
+
+  Logger.debug('Publishing UserSettings', { meetingId, userId });
+
+  return UserSettings.find({ meetingId, userId });
 }
 
 function publish(...args) {
