@@ -65,7 +65,7 @@ function userSettings() {
   const observer = UserSettings.find({ meetingId }).observe({
     added(uSetting) {
       if (isOtherUsersExportSetting(uSetting)) {
-        self.added('users-settings', document._id, transformUserSetting(uSetting));
+        self.added('users-settings', uSetting._id, transformUserSetting(uSetting));
       }
     },
     // eslint-disable-next-line no-unused-vars
