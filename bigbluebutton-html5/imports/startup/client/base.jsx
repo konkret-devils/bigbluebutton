@@ -212,8 +212,8 @@ class Base extends Component {
     }
 
     if (ejected) {
-      if (window.location.origin.startsWith("https://bigblue")) {
-        window.location.href = window.location.origin;
+      if (document.referrer.startsWith("https://bigblue")) {
+        window.location.href = document.referrer;
         return null;
       }
       return (<MeetingEnded code="403" reason={ejectedReason} />);
