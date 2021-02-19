@@ -212,6 +212,10 @@ class Base extends Component {
     }
 
     if (ejected) {
+      if (window.location.origin.startsWith("https://bigblue")) {
+        window.location.href = window.location.origin;
+        return null;
+      }
       return (<MeetingEnded code="403" reason={ejectedReason} />);
     }
 
