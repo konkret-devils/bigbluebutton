@@ -121,6 +121,7 @@ export default class TextDrawListener extends Component {
   }
 
   handleClick(e) {
+    return;
     if (e.target.getAttribute('role') !== 'presentation') this.sendLastMessage();
   }
 
