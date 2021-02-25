@@ -412,13 +412,13 @@ const BaseContainer = withTracker(() => {
 
   if (showUserListOnLogin()) {
     if (showChatOnLogin()) {
-      Session.setDefault('openPanel', 'chat');
-      Session.setDefault('idChatOpen', PUBLIC_CHAT_ID);
+      Session.set('openPanel', 'chat');
+      Session.set('idChatOpen', PUBLIC_CHAT_ID);
     } else {
-      Session.setDefault('openPanel', 'userlist');
+      Session.set('openPanel', 'userlist');
     }
   } else {
-    Session.setDefault('openPanel', '');
+    Session.set('openPanel', '');
   }
 
   const codeError = Session.get('codeError');
