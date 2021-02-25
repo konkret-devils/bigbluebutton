@@ -51,7 +51,7 @@ export default class TextDrawListener extends Component {
     // Check it to figure if you can add onTouchStart in render(), or should use raw DOM api
     this.hasBeenTouchedRecently = false;
 
-    //this.handleClick = this.handleClick.bind(this);
+    this.handleClick = this.handleClick.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -66,7 +66,7 @@ export default class TextDrawListener extends Component {
 
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
-    //window.addEventListener('click', this.handleClick);
+    window.addEventListener('click', this.handleClick);
   }
 
   // If the activeId suddenly became empty - this means the shape was deleted
@@ -114,15 +114,14 @@ export default class TextDrawListener extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('beforeunload', this.sendLastMessage);
-    //window.removeEventListener('click', this.handleClick);
+    window.removeEventListener('click', this.handleClick);
     // sending the last message on componentDidUnmount
     // for example in case when you switched a tool while drawing text shape
     this.sendLastMessage();
   }
 
-  handleClick() {
-    const { isWritingText } = this.state;
-    if (isWritingText) this.sendLastMessage();
+  handleClick(e) {
+    if (e.target.getAttribute('role') !== 'presentation') this.sendLastMessage();
   }
 
   // checks if the input textarea is focused or not, and if not - moves focus there
