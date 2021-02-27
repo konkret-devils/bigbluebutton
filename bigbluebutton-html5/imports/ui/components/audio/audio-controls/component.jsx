@@ -25,6 +25,10 @@ const intlMessages = defineMessages({
     id: 'app.actionsBar.unmuteLabel',
     description: 'Unmute audio button label',
   },
+  showAudioSettings: {
+    id: 'app.actionsBar.showAudioSettingsLabel',
+    description: 'Show audio settings label',
+  }
 });
 
 const propTypes = {
@@ -55,6 +59,7 @@ class AudioControls extends PureComponent {
       handleToggleMuteMicrophone,
       handleJoinAudio,
       handleLeaveAudio,
+      handleShowAudioSettings,
       showMute,
       muted,
       disable,
@@ -69,6 +74,7 @@ class AudioControls extends PureComponent {
       isPresenter,
     } = this.props;
 
+    let moreIcon = 'more';
     let joinIcon = 'audio_off';
     if (inAudio) {
       if (listenOnly) {
@@ -98,6 +104,21 @@ class AudioControls extends PureComponent {
       />
     );
 
+    const showAudioSettingsBtn = (
+        <Button
+            className={cx(!muted || styles.btn)}
+            onClick={handleShowAudioSettings}
+            disabled={disable}
+            hideLabel
+            label={'Audio-Einstellungen'}
+            aria-label={'Audio-Einstellungen'}
+            color={'primary'}
+            icon={moreIcon}
+            size="lg"
+            circle
+        />
+    );
+
     const MUTE_ALERT_CONFIG = Meteor.settings.public.app.mutedAlert;
     const { enabled: muteAlertEnabled } = MUTE_ALERT_CONFIG;
     return (
@@ -120,6 +141,7 @@ class AudioControls extends PureComponent {
           circle
           accessKey={inAudio ? shortcuts.leaveaudio : shortcuts.joinaudio}
         />
+        {showMute && isVoiceUser ? showAudioSettingsBtn : null}
       </span>
     );
   }

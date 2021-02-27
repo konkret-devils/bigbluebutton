@@ -301,6 +301,7 @@
     "app.actionsBar.changeStatusLabel": "Change status",
     "app.actionsBar.muteLabel": "Mute",
     "app.actionsBar.unmuteLabel": "Unmute",
+    "app.actionsBar.showAudioSettingsLabel": "Audio Settings",
     "app.actionsBar.camOffLabel": "Camera off",
     "app.actionsBar.raiseLabel": "Raise",
     "app.actionsBar.label": "Actions bar",

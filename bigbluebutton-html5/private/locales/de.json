@@ -298,6 +298,7 @@
     "app.actionsBar.changeStatusLabel": "Status ändern",
     "app.actionsBar.muteLabel": "Stummschalten",
     "app.actionsBar.unmuteLabel": "Freischalten",
+    "app.actionsBar.showAudioSettingsLabel": "Audio-Einstellungen",
     "app.actionsBar.camOffLabel": "Kamera aus",
     "app.actionsBar.raiseLabel": "Hand heben",
     "app.actionsBar.label": "Aktionsmenü",

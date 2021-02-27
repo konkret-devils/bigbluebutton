@@ -44,6 +44,10 @@ const intlMessages = defineMessages({
     id: 'app.audio.audioSettings.retryLabel',
     description: 'Retry button label',
   },
+  okLabel: {
+    id: 'app.about.confirmLabel',
+    description: 'OK button label'
+  }
 });
 
 class AudioSettings extends React.Component {
@@ -92,6 +96,7 @@ class AudioSettings extends React.Component {
       intl,
       handleBack,
       handleRetry,
+      closeModal,
     } = this.props;
 
     return (
