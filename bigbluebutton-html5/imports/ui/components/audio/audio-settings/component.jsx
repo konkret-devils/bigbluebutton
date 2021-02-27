@@ -183,7 +183,7 @@ class AudioSettings extends React.Component {
 
 AudioSettings.propTypes = propTypes;
 
-const AudioSettingsModal = () => injectIntl(AudioSettings);
+const AudioSettingsModal = injectIntl(AudioSettings);
 
 export { AudioSettingsModal };
 
