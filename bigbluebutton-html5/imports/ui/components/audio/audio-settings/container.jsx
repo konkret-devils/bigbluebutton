@@ -10,16 +10,17 @@ import deviceInfo from '/imports/utils/deviceInfo';
 import lockContextContainer from '/imports/ui/components/lock-viewers/context/container';
 import AudioError from '/imports/ui/services/audio-manager/error-codes';
 import Service from '../service';
-import AudioSettings from "./component";
+import { AudioSettingsModal } from "./component";
 import Settings from "../../../services/settings";
 
-const AudioSettingsContainer = props => <AudioSettings {...props} />;
+
+const AudioSettingsContainer = props => <AudioSettingsModal {...props} />;
 
 const APP_CONFIG = Meteor.settings.public.app;
 
 const isRTL = document.documentElement.getAttribute('dir') === 'rtl';
 
-export default lockContextContainer(({ mountModal, userLocks }) => {
+export default lockContextContainer(withModalMounter(withTracker(({ mountModal, userLocks }) => {
 
   return ({
     closeModal: () => {
@@ -100,4 +101,4 @@ export default lockContextContainer(({ mountModal, userLocks }) => {
     },
     handleRetry: () => true,
   });
-})(AudioSettingsContainer);
+})(AudioSettingsContainer)));
