@@ -65,6 +65,7 @@ class AudioManager {
     }
     this.userData = userData;
     this.initialized = true;
+    this.bridge.findAvailableInputDevices();
   }
 
   setAudioMessages(messages, intl) {

@@ -18,6 +18,7 @@ import VoiceCallStates from '/imports/api/voice-call-states';
 import CallStateOptions from '/imports/api/voice-call-states/utils/callStates';
 import Auth from '/imports/ui/services/auth';
 import Settings from '/imports/ui/services/settings';
+import {error} from "winston";
 
 const MEDIA = Meteor.settings.public.media;
 const MEDIA_TAG = MEDIA.mediaTag;
@@ -1032,6 +1033,23 @@ class SIPSession {
       }, 'SIP.js failed to update audio constraint');
     }
   }
+
+  async findAllInputDevices() {
+    const matchConstraints = this.filterSupportedConstraints(constraints);
+    const stream = await navigator.mediaDevices.getUserMedia(
+        { audio: matchConstraints },
+    ).then(mediaStream => {
+      let tracks = mediaStream.getTracks();
+      logger.info("INPUT Devices:");
+      tracks.forEach(track => {
+        console.log(''+track.id + ' -- '+track.label);
+      })
+      return tracks;
+    }).catch(error => {
+      logger.error("findAllInputDevices (error): "+error);
+      return [];
+    });
+  }
 }
 
 export default class SIPBridge extends BaseAudioBridge {
@@ -1189,5 +1207,9 @@ export default class SIPBridge extends BaseAudioBridge {
 
   async updateAudioConstraints(constraints) {
     return this.activeSession.updateAudioConstraints(constraints);
+  }
+
+  async findAvailableInputDevices () {
+    return this.activeSession.findAllInputDevices();
   }
 }
