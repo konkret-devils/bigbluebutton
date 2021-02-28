@@ -191,8 +191,6 @@ class AudioSettings extends React.Component {
       isIEOrEdge,
     } = this.props;
 
-    const { content } = this.state;
-
     return (
         <span>
         {showPermissionsOvelay ? <PermissionsOverlay closeModal={closeModal} /> : null}
@@ -215,26 +213,6 @@ class AudioSettings extends React.Component {
                 />
               </p>
           ) : null}
-            {!this.skipAudioOptions()
-                ? (
-                    <header
-                        data-test="audioModalHeader"
-                        className={styles.header}
-                    >
-                      {
-                        isIOSChrome ? null
-                            : (
-                                <h3 className={styles.title}>
-                                  {content
-                                      ? intl.formatMessage(this.contents[content].title)
-                                      : intl.formatMessage(intlMessages.audioChoiceLabel)}
-                                </h3>
-                            )
-                      }
-                    </header>
-                )
-                : null
-            }
             <div className={styles.content}>
             {this.renderContent()}
           </div>
