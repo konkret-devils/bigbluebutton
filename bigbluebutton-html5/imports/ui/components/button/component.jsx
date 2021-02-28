@@ -192,7 +192,9 @@ export default class Button extends BaseButton {
       >
         {!iconRight ? null : this.renderLabel()}
         <span className={cx(this._getClassNames())}>
-          {this.renderIcon()}
+          {this.props.customIcon ? (
+              this.props.customIcon
+          ) : this.renderIcon()}
         </span>
         {iconRight ? null : this.renderLabel()}
       </BaseButton>
