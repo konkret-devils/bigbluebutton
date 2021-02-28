@@ -63,6 +63,8 @@ class AudioSettingsRoomModal extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleOutputChange = this.handleOutputChange.bind(this);
 
+    this.meter = new AudioStreamVolume({ deviceId: inputDeviceId })
+
     this.state = {
       inputDeviceId,
       outputDeviceId,
@@ -125,9 +127,7 @@ class AudioSettingsRoomModal extends React.Component {
                 </label>
               </div>
               <div className={cx(styles.col, styles.spacedLeft)}>
-                <AudioStreamVolume
-                  deviceId={this.state.inputDeviceId}
-                />
+                {this.meter}
               </div>
             </div>
             <div className={styles.col}>
