@@ -74,7 +74,7 @@ class AudioControls extends PureComponent {
       isPresenter,
     } = this.props;
 
-    let mixerIcon = 'mixer';
+    let mixerIcon = '<img src="/svgs/bbb_mixer_icon.svg" style="width:100%; height: auto;" />';
     let joinIcon = 'audio_off';
     if (inAudio) {
       if (listenOnly) {
@@ -113,7 +113,7 @@ class AudioControls extends PureComponent {
             label={intl.formatMessage(intlMessages.showAudioSettings)}
             aria-label={intl.formatMessage(intlMessages.showAudioSettings)}
             color={'primary'}
-            icon={mixerIcon}
+            customIcon={mixerIcon}
             size="lg"
             circle
         />
