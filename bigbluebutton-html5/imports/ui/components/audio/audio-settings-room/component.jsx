@@ -100,11 +100,11 @@ class AudioSettingsRoomModal extends React.Component {
   }
 
   renderMeter() {
-    const { inputDeviceId: deviceId } = this.state;
+    const {inputDeviceId: deviceId} = this.state;
 
     return (
         <AudioStreamVolume
-            deviceId: "default"
+            deviceId="default"
         />
     );
   }
