@@ -192,9 +192,7 @@ export default class Button extends BaseButton {
       >
         {!iconRight ? null : this.renderLabel()}
         <span className={cx(this._getClassNames())}>
-          {this.props.customIcon ? (
-              this.props.customIcon
-          ) : this.renderIcon()}
+          {this.renderIcon()}
         </span>
         {iconRight ? null : this.renderLabel()}
       </BaseButton>
@@ -210,7 +208,7 @@ export default class Button extends BaseButton {
     if (iconName) {
       return (<Icon className={styles.icon} iconName={iconName} />);
     } if (customIcon) {
-      return customIcon;
+      return (<img src={customIcon} className={styles.svgIcon} alt={}/>);
     }
 
     return null;

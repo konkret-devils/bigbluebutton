@@ -290,6 +290,7 @@
 }
 
 /* svg based icons */
-.icon-bbb-mixer:before {
-  content: url('/svgs/bbb_mixer_icon.svg');
+.svgIcon {
+  width: 100%;
+  height: auto;
 }

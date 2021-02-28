@@ -74,7 +74,7 @@ class AudioControls extends PureComponent {
       isPresenter,
     } = this.props;
 
-    let mixerIcon = '<img src="/svgs/bbb_mixer_icon.svg" style="width:100%; height: auto;" />';
+    let mixerIcon = '/svgs/bbb_mixer_icon.svg';
     let joinIcon = 'audio_off';
     if (inAudio) {
       if (listenOnly) {
