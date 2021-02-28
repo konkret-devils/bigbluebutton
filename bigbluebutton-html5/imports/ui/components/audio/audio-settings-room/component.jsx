@@ -10,6 +10,7 @@ import { styles } from './styles';
 import PermissionsOverlay from "../permissions-overlay/component";
 import Modal from "../../modal/simple/component";
 import AudioStreamVolume from "../audio-stream-volume/component";
+import Help from "../help/component";
 
 const propTypes = {
   intl: PropTypes.object.isRequired,
@@ -63,11 +64,16 @@ class AudioSettingsRoomModal extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleOutputChange = this.handleOutputChange.bind(this);
 
-    this.meter = new AudioStreamVolume({ deviceId: inputDeviceId })
-
     this.state = {
       inputDeviceId,
       outputDeviceId,
+    };
+
+    this.contents = {
+      meter: {
+        title: "Audio Stream Meter",
+        component: () => this.renderMeter(),
+      },
     };
   }
 
@@ -91,6 +97,22 @@ class AudioSettingsRoomModal extends React.Component {
     this.setState({
       outputDeviceId: deviceId,
     });
+  }
+
+  renderMeter() {
+    const { inputDeviceId: deviceId } = this.state;
+    const { AudioError } = this.props;
+
+    const audioErr = {
+      ...AudioError,
+      code: errCode,
+    };
+
+    return (
+        <AudioStreamVolume
+            deviceId
+        />
+    );
   }
 
   renderContent() {
@@ -126,8 +148,8 @@ class AudioSettingsRoomModal extends React.Component {
                   />
                 </label>
               </div>
-              <div className={cx(styles.col, styles.spacedLeft)}>
-                {this.meter}
+              <div className={cx(styles.col)}>
+                {this.contents.meter.component()}
               </div>
             </div>
             <div className={styles.col}>
