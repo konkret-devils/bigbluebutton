@@ -18,7 +18,7 @@ const AudioSettingsContainer = props => <AudioSettingsModal {...props} />;
 
 const APP_CONFIG = Meteor.settings.public.app;
 
-const skipCheck = true;//getFromUserSettings('bbb_skip_check_audio', APP_CONFIG.skipCheck);
+const skipCheck = getFromUserSettings('bbb_skip_check_audio', APP_CONFIG.skipCheck);
 
 const isRTL = document.documentElement.getAttribute('dir') === 'rtl';
 
