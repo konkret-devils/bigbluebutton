@@ -9,7 +9,7 @@ import Auth from '/imports/ui/services/auth';
 import Users from '/imports/api/users';
 import AudioControls from './component';
 import AudioModalContainer from '../audio-modal/container';
-import AudioSettingsContainer from '../audio-settings/container';
+import AudioSettingsRoomModalContainer from '../audio-settings-room/container';
 import Service from '../service';
 
 const ROLE_VIEWER = Meteor.settings.public.user.role_viewer;
@@ -81,7 +81,7 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
     handleToggleMuteMicrophone: () => toggleMuteMicrophone(),
     handleJoinAudio: () => (isConnected() ? joinListenOnly() : mountModal(<AudioModalContainer />)),
     handleLeaveAudio,
-    handleShowAudioSettings: () => mountModal(<AudioSettingsContainer />),
+    handleShowAudioSettings: () => mountModal(<AudioSettingsRoomModalContainer />),
     inputStream: AudioManager.inputStream,
     isViewer,
     isPresenter,
