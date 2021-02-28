@@ -18,6 +18,8 @@ const AudioSettingsContainer = props => <AudioSettingsModal {...props} />;
 
 const APP_CONFIG = Meteor.settings.public.app;
 
+const skipCheck = getFromUserSettings('bbb_skip_check_audio', APP_CONFIG.skipCheck);
+
 const isRTL = document.documentElement.getAttribute('dir') === 'rtl';
 
 export default lockContextContainer(withModalMounter(withTracker(({ mountModal, userLocks }) => {
@@ -39,7 +41,7 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
       });
 
       return call.then(() => {
-        mountModal(null);
+        return true;
       }).catch((error) => {
         throw error;
       });
@@ -61,22 +63,15 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
         throw error;
       });
     },
-    leaveEchoTest: () => {
-      if (!Service.isEchoTest()) {
-        return Promise.resolve();
-      }
-      return Service.exitAudio();
-    },
     changeInputDevice: (inputDeviceId) => {
       const { microphoneConstraints } = Settings.application;
       let previousInputDeviceId = Service.inputDeviceId();
-      Service.changeInputDevice(inputDeviceId);
-      Service.updateAudioConstraints(microphoneConstraints)
-          .then(() => inputDeviceId)
-          .catch((error) => {
-            logger.error("Failed to change Audio input device "+inputDeviceId);
-            Service.changeInputDevice(previousInputDeviceId);
-          });
+      Service.changeInputDevice(inputDeviceId).then(() => {
+        if (!Service.isListenOnly()) {
+          return this.joinMicrophone();
+        }
+        return Promise.resolve();
+      });
     },
     changeOutputDevice: outputDeviceId => Service.changeOutputDevice(outputDeviceId),
     joinEchoTest: () => Service.joinEchoTest(),

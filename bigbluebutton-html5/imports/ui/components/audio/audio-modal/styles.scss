@@ -38,11 +38,14 @@
   }
 
   .audioBtn:only-child {
+    //noinspection CssInvalidPropertyValue
     margin: inherit 0 inherit inherit;
 
     [dir="rtl"] & {
-      margin: inherit!important inherit!important inherit!important 0;
+      margin-right: 0 !important;
+      margin-left: inherit !important;
     }
+
   }
 }
 
