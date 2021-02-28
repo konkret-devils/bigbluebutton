@@ -104,7 +104,7 @@ class AudioSettingsRoomModal extends React.Component {
 
     return (
         <AudioStreamVolume
-            deviceId
+            deviceId: "default"
         />
     );
   }
