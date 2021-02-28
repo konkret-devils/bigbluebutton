@@ -101,12 +101,6 @@ class AudioSettingsRoomModal extends React.Component {
 
   renderMeter() {
     const { inputDeviceId: deviceId } = this.state;
-    const { AudioError } = this.props;
-
-    const audioErr = {
-      ...AudioError,
-      code: errCode,
-    };
 
     return (
         <AudioStreamVolume
