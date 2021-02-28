@@ -13,7 +13,7 @@ const defaultProps = {
   low: 0,
   optimum: 0.05,
   high: 0.3,
-  deviceId: undefined,
+  deviceId: "default",
 };
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
