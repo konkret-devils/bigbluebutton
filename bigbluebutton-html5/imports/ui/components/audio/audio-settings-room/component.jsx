@@ -9,6 +9,7 @@ import cx from 'classnames';
 import { styles } from './styles';
 import PermissionsOverlay from "../permissions-overlay/component";
 import Modal from "../../modal/simple/component";
+import AudioStreamVolume from "../audio-stream-volume/component";
 
 const propTypes = {
   intl: PropTypes.object.isRequired,
@@ -122,6 +123,11 @@ class AudioSettingsRoomModal extends React.Component {
                     onChange={this.handleInputChange}
                   />
                 </label>
+              </div>
+              <div className={cx(styles.col, styles.spacedLeft)}>
+                <AudioStreamVolume
+                  deviceId={this.state.inputDeviceId}
+                />
               </div>
             </div>
             <div className={styles.col}>
