@@ -288,3 +288,8 @@
 .icon-bbb-closed_caption:before {
   content: "\e957";
 }
+
+/* svg based icons */
+.icon-bbb-mixer:before {
+  content: url('/svgs/bbb_mixer_icon.svg');
+}
