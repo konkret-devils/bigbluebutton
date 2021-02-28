@@ -119,11 +119,12 @@
 }
 
 .asBtn {
-  span {
-    box-shadow: none;
+  span, span:focus {
+    box-shadow: none !important;
     background-color: transparent !important;
     border-color: transparent !important;
-    color: var(--color-gray-light)
+    color: var(--btn-primary-bg) !important;
+    padding-left: 0 !important;
   }
 }
 
