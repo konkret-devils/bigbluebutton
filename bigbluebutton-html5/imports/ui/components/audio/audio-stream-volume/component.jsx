@@ -6,14 +6,14 @@ const propTypes = {
   low: PropTypes.number,
   optimum: PropTypes.number,
   high: PropTypes.number,
-  deviceId: PropTypes.string,
+  deviceid: PropTypes.string,
 };
 
 const defaultProps = {
   low: 0,
   optimum: 0.05,
   high: 0.3,
-  deviceId: "default",
+  deviceid: "default",
 };
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -38,8 +38,8 @@ class AudioStreamVolume extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { deviceId: nextDeviceId } = this.props;
-    if (prevProps.deviceId !== nextDeviceId) {
+    const { deviceid: nextDeviceId } = this.props;
+    if (prevProps.deviceid !== nextDeviceId) {
       this.closeAudioContext().then(() => {
         this.setState({
           slow: 0,
@@ -63,7 +63,7 @@ class AudioStreamVolume extends Component {
       audio: true,
     };
 
-    const { deviceId } = this.props;
+    const { deviceid: deviceId } = this.props;
 
     if (deviceId) {
       constraints.audio = {
