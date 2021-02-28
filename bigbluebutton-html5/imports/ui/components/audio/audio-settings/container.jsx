@@ -28,47 +28,27 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
     closeModal: () => {
       if (!Service.isConnecting()) mountModal(null);
     },
-    joinMicrophone: () => {
-      const call = new Promise((resolve, reject) => {
-        if (skipCheck) {
-          resolve(Service.joinMicrophone());
-        } else {
-          resolve(Service.transferCall());
-        }
-        reject(() => {
-          Service.exitAudio();
-        });
-      });
-
-      return call.then(() => {
-        return true;
-      }).catch((error) => {
-        throw error;
-      });
-    },
-    joinListenOnly: () => {
-      const call = new Promise((resolve) => {
-        Service.joinListenOnly().then(() => {
-          // Autoplay block wasn't triggered. Close the modal. If autoplay was
-          // blocked, that'll be handled in the modal component when then
-          // prop transitions to a state where it was handled OR the user opts
-          // to close the modal.
-          if (!Service.autoplayBlocked()) {
-            mountModal(null);
-          }
-          resolve();
-        });
-      });
-      return call.catch((error) => {
-        throw error;
-      });
-    },
     changeInputDevice: (inputDeviceId) => {
       const { microphoneConstraints } = Settings.application;
       let previousInputDeviceId = Service.inputDeviceId();
       Service.changeInputDevice(inputDeviceId).then(() => {
         if (!Service.isListenOnly()) {
-          return this.joinMicrophone();
+          const call = new Promise((resolve, reject) => {
+            if (skipCheck) {
+              resolve(Service.joinMicrophone());
+            } else {
+              resolve(Service.transferCall());
+            }
+            reject(() => {
+              Service.changeInputDevice(previousInputDeviceId).catch(() => Service.exitAudio());
+            });
+          });
+
+          return call.then(() => {
+            return true;
+          }).catch((error) => {
+            throw error;
+          });
         }
         return Promise.resolve();
       });
