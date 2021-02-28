@@ -33,7 +33,7 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
       let previousInputDeviceId = Service.inputDeviceId();
       Service.changeInputDevice(inputDeviceId).then(() => {
         if (!Service.isListenOnly()) {
-          const call = new Promise((resolve, reject) => {
+          /*const call = new Promise((resolve, reject) => {
             if (skipCheck) {
               resolve(Service.joinMicrophone());
             } else {
@@ -49,8 +49,12 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
           }).catch((error) => {
             throw error;
           });
+        }*/
+           return Service.exitAudio()
+                         .then(() => Service.updateAudioConstraints(Settings.application.microphoneConstraints)
+                                            .then(() => Service.joinMicrophone()));
         }
-        return Promise.resolve();
+        return Promise.resolve(inputDeviceId);
       });
     },
     changeOutputDevice: outputDeviceId => Service.changeOutputDevice(outputDeviceId),
