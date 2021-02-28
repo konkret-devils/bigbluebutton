@@ -1,12 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { defineMessages, injectIntl } from 'react-intl';
+import {defineMessages, FormattedMessage, injectIntl} from 'react-intl';
 import Button from '/imports/ui/components/button/component';
 import { withModalMounter } from '/imports/ui/components/modal/service';
 import DeviceSelector from '/imports/ui/components/audio/device-selector/component';
 import AudioTestContainer from '/imports/ui/components/audio/audio-test/container';
 import cx from 'classnames';
 import { styles } from './styles';
+import PermissionsOverlay from "../permissions-overlay/component";
+import Modal from "../../modal/simple/component";
 
 const propTypes = {
   intl: PropTypes.object.isRequired,
@@ -90,7 +92,7 @@ class AudioSettings extends React.Component {
     });
   }
 
-  render() {
+  renderContent() {
     const {
       isConnecting,
       intl,
@@ -179,6 +181,68 @@ class AudioSettings extends React.Component {
       </div>
     );
   }
+
+  render() {
+    const {
+      intl,
+      showPermissionsOvelay,
+      isIOSChrome,
+      closeModal,
+      isIEOrEdge,
+    } = this.props;
+
+    const { content } = this.state;
+
+    return (
+        <span>
+        {showPermissionsOvelay ? <PermissionsOverlay closeModal={closeModal} /> : null}
+          <Modal
+              overlayClassName={styles.overlay}
+              className={styles.modal}
+              onRequestClose={closeModal}
+              hideBorder
+              contentLabel={intl.formatMessage(intlMessages.ariaModalTitle)}
+          >
+          {isIEOrEdge ? (
+              <p className={cx(styles.text, styles.browserWarning)}>
+                <FormattedMessage
+                    id="app.audioModal.unsupportedBrowserLabel"
+                    description="Warning when someone joins with a browser that isnt supported"
+                    values={{
+                      0: <a href="https://www.google.com/chrome/">Chrome</a>,
+                      1: <a href="https://getfirefox.com">Firefox</a>,
+                    }}
+                />
+              </p>
+          ) : null}
+            {!this.skipAudioOptions()
+                ? (
+                    <header
+                        data-test="audioModalHeader"
+                        className={styles.header}
+                    >
+                      {
+                        isIOSChrome ? null
+                            : (
+                                <h3 className={styles.title}>
+                                  {content
+                                      ? intl.formatMessage(this.contents[content].title)
+                                      : intl.formatMessage(intlMessages.audioChoiceLabel)}
+                                </h3>
+                            )
+                      }
+                    </header>
+                )
+                : null
+            }
+            <div className={styles.content}>
+            {this.renderContent()}
+          </div>
+        </Modal>
+      </span>
+    );
+  }
+
 }
 
 AudioSettings.propTypes = propTypes;

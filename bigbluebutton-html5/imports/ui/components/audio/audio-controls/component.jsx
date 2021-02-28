@@ -106,15 +106,15 @@ class AudioControls extends PureComponent {
 
     const showAudioSettingsBtn = (
         <Button
-            className={cx(!muted || styles.btn)}
+            className={cx(!muted || styles.asBtn)}
             onClick={handleShowAudioSettings}
             disabled={disable}
             hideLabel
             label={'Audio-Einstellungen'}
             aria-label={'Audio-Einstellungen'}
-            color={'primary'}
+            color={'dark'}
             icon={moreIcon}
-            size="lg"
+            size="md"
             circle
         />
     );

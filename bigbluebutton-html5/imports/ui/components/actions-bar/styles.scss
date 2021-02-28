@@ -118,6 +118,15 @@
   }
 }
 
+.asBtn {
+  span {
+    box-shadow: none;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: var(--color-gray-light)
+  }
+}
+
 .dropdown,
 .btn {
   z-index: 3;
