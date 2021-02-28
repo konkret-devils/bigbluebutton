@@ -49,7 +49,15 @@ const intlMessages = defineMessages({
   okLabel: {
     id: 'app.about.confirmLabel',
     description: 'OK button label'
-  }
+  },
+  ariaModalTitle: {
+    id: 'app.audioModal.ariaTitle',
+    description: 'aria label for modal title',
+  },
+  autoplayPromptTitle: {
+    id: 'app.audioModal.autoplayBlockedDesc',
+    description: 'Message for autoplay audio block',
+  },
 });
 
 class AudioSettings extends React.Component {
@@ -213,9 +221,9 @@ class AudioSettings extends React.Component {
                 />
               </p>
           ) : null}
-            <div className={styles.content}>
-            {this.renderContent()}
-          </div>
+              <div className={styles.content}>
+                {this.renderContent()}
+              </div>
         </Modal>
       </span>
     );
