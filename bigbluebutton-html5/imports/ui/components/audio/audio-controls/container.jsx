@@ -13,6 +13,7 @@ import AudioSettingsRoomModalContainer from '../audio-settings-room/container';
 import { invalidateCookie } from '../audio-modal/service';
 import Service from '../service';
 import AppService from '/imports/ui/components/app/service';
+import getFromUserSettings from "/imports/ui/services/users-settings";
 
 const ROLE_VIEWER = Meteor.settings.public.user.role_viewer;
 const APP_CONFIG = Meteor.settings.public.app;
