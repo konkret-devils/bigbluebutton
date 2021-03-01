@@ -167,11 +167,11 @@ class WhiteboardToolbar extends Component {
 
     if (annotationSelected.value !== 'text') {
       // trigger initial animation on the thickness circle, otherwise it stays at 0
-      this.thicknessListIconColor.beginElement();
-      this.thicknessListIconRadius.beginElement();
-      this.colorListIconColor.beginElement();
+      !this.thicknessListIconColor || this.thicknessListIconColor.beginElement();
+      !this.thicknessListIconRadius || this.thicknessListIconRadius.beginElement();
+      !this.colorListIconColor || this.colorListIconColor.beginElement();
     } else {
-      this.colorListIconColor.beginElement();
+      !this.colorListIconColor || this.colorListIconColor.beginElement();
     }
   }
 
