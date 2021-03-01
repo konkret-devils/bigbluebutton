@@ -43,7 +43,7 @@ const intlMessages = defineMessages({
     description: 'OK button label'
   },
   ariaModalTitle: {
-    id: 'app.audioModal.ariaTitle',
+    id: 'app.audioModal.settingsTitle',
     description: 'aria label for modal title',
   },
   autoplayPromptTitle: {
