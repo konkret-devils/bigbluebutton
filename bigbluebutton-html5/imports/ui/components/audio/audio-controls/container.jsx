@@ -10,9 +10,12 @@ import Users from '/imports/api/users';
 import AudioControls from './component';
 import AudioModalContainer from '../audio-modal/container';
 import AudioSettingsRoomModalContainer from '../audio-settings-room/container';
+import { invalidateCookie } from '../audio-modal/service';
 import Service from '../service';
+import AppService from '/imports/ui/components/app/service';
 
 const ROLE_VIEWER = Meteor.settings.public.user.role_viewer;
+const APP_CONFIG = Meteor.settings.public.app;
 
 const AudioControlsContainer = props => <AudioControls {...props} />;
 
@@ -39,6 +42,17 @@ const processToggleMuteFromOutside = (e) => {
 };
 
 const handleLeaveAudio = () => {
+  const meetingIsBreakout = AppService.meetingIsBreakout();
+
+  if (!meetingIsBreakout) {
+    invalidateCookie('joinedAudio');
+  }
+
+  const skipOnFistJoin = getFromUserSettings('bbb_skip_check_audio_on_first_join', APP_CONFIG.skipCheckOnJoin);
+  if (skipOnFistJoin && !Storage.getItem('getEchoTest')) {
+    Storage.setItem('getEchoTest', true);
+  }
+
   Service.exitAudio();
   logger.info({
     logCode: 'audiocontrols_leave_audio',
@@ -68,6 +82,11 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
   });
   const isViewer = currentUser.role === ROLE_VIEWER;
   const isPresenter = currentUser.presenter;
+
+  if (Service.isReturningFromBreakoutAudioTransfer()) {
+    Service.setReturningFromBreakoutAudioTransfer(false);
+    Service.recoverMicState();
+  }
 
   return ({
     processToggleMuteFromOutside: arg => processToggleMuteFromOutside(arg),
