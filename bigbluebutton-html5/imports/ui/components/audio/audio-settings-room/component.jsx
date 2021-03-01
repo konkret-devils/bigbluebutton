@@ -1,16 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {defineMessages, FormattedMessage, injectIntl} from 'react-intl';
-import Button from '/imports/ui/components/button/component';
-import { withModalMounter } from '/imports/ui/components/modal/service';
+//import Button from '/imports/ui/components/button/component';
+//import { withModalMounter } from '/imports/ui/components/modal/service';
 import DeviceSelector from '/imports/ui/components/audio/device-selector/component';
 import AudioTestContainer from '/imports/ui/components/audio/audio-test/container';
 import cx from 'classnames';
 import { styles } from './styles';
 import PermissionsOverlay from "../permissions-overlay/component";
 import Modal from "../../modal/simple/component";
-import AudioStreamVolume from "../audio-stream-volume/component";
-import Help from "../help/component";
+//import AudioStreamVolume from "../audio-stream-volume/component";
+//import Help from "../help/component";
 
 const propTypes = {
   intl: PropTypes.object.isRequired,
@@ -99,17 +99,18 @@ class AudioSettingsRoomModal extends React.Component {
     });
   }
 
+  /*
   renderMeter() {
     return (
         <AudioStreamVolume />
     );
   }
+   */
 
   renderContent() {
     const {
-      isConnecting,
       intl,
-      closeModal,
+//      closeModal,
     } = this.props;
 
     return (
@@ -138,10 +139,8 @@ class AudioSettingsRoomModal extends React.Component {
                   />
                 </label>
               </div>
-              <div className={cx(styles.col)}>
-                {this.contents.meter.component()}
-              </div>
             </div>
+
             <div className={styles.col}>
               <div className={styles.formElement}>
                 <label
@@ -181,14 +180,12 @@ class AudioSettingsRoomModal extends React.Component {
     const {
       intl,
       showPermissionsOverlay,
-      isIOSChrome,
       closeModal,
-      isIEOrEdge,
     } = this.props;
 
     return (
         <span>
-        {showPermissionsOverlay ? <PermissionsOverlay closeModal={closeModal} /> : null}
+          {showPermissionsOverlay ? <PermissionsOverlay closeModal={closeModal} /> : null}
           <Modal
               overlayClassName={styles.overlay}
               className={styles.modal}
@@ -196,21 +193,9 @@ class AudioSettingsRoomModal extends React.Component {
               hideBorder
               contentLabel={intl.formatMessage(intlMessages.ariaModalTitle)}
           >
-          {isIEOrEdge ? (
-              <p className={cx(styles.text, styles.browserWarning)}>
-                <FormattedMessage
-                    id="app.audioModal.unsupportedBrowserLabel"
-                    description="Warning when someone joins with a browser that isnt supported"
-                    values={{
-                      0: <a href="https://www.google.com/chrome/">Chrome</a>,
-                      1: <a href="https://getfirefox.com">Firefox</a>,
-                    }}
-                />
-              </p>
-          ) : null}
-              <div className={styles.content}>
-                {this.renderContent()}
-              </div>
+          <div className={styles.content}>
+            {this.renderContent()}
+          </div>
         </Modal>
       </span>
     );
