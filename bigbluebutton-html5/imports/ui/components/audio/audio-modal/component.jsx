@@ -31,7 +31,7 @@ const propTypes = {
   inputDeviceId: PropTypes.string,
   outputDeviceId: PropTypes.string,
   formattedDialNum: PropTypes.string.isRequired,
-  showPermissionsOvelay: PropTypes.bool.isRequired,
+  showPermissionsOverlay: PropTypes.bool.isRequired,
   listenOnlyMode: PropTypes.bool.isRequired,
   skipCheck: PropTypes.bool.isRequired,
   joinFullAudioImmediately: PropTypes.bool.isRequired,
@@ -544,7 +544,7 @@ class AudioModal extends Component {
   render() {
     const {
       intl,
-      showPermissionsOvelay,
+      showPermissionsOverlay,
       isIOSChrome,
       closeModal,
       isIEOrEdge,
@@ -554,7 +554,7 @@ class AudioModal extends Component {
 
     return (
       <span>
-        {showPermissionsOvelay ? <PermissionsOverlay closeModal={closeModal} /> : null}
+        {showPermissionsOverlay ? <PermissionsOverlay closeModal={closeModal} /> : null}
         <Modal
           overlayClassName={styles.overlay}
           className={styles.modal}
