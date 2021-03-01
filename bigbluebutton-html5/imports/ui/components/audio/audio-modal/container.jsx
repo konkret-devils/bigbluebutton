@@ -56,6 +56,8 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
 
   const forceListenOnlyAttendee = forceListenOnly && !Service.isUserModerator();
 
+  const joinFullAudioEchoTest = joinFullAudioImmediately
+
   return ({
     joinedAudio,
     meetingIsBreakout,
@@ -74,11 +76,13 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
     outputDeviceId: Service.outputDeviceId(),
     showPermissionsOverlay: Service.isWaitingPermissions(),
     listenOnlyMode,
+    skipCheck,
     formattedDialNum,
     formattedTelVoice,
     combinedDialInNum,
     audioLocked: userLocks.userMic,
     joinFullAudioImmediately,
+    joinFullAudioEchoTest,
     forceListenOnlyAttendee,
     isIOSChrome: browser().name === 'crios',
     isMobileNative: navigator.userAgent.toLowerCase().includes('bbbnative'),

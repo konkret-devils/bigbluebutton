@@ -102,6 +102,11 @@ class CustomParameters {
     return resp === true;
   }
 
+  async skipCheckOnJoin(testName, args, meetingId, customParameter) {
+    //@TODO give it some meaning
+    return resp === true;
+  }
+
   async clientTitle(testName, args, meetingId, customParameter) {
     testName = 'clientTitle';
     this.page1.logger('before init ', testName);
