@@ -1,16 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {defineMessages, FormattedMessage, injectIntl} from 'react-intl';
-//import Button from '/imports/ui/components/button/component';
-//import { withModalMounter } from '/imports/ui/components/modal/service';
+import Button from '/imports/ui/components/button/component';
 import DeviceSelector from '/imports/ui/components/audio/device-selector/component';
 import AudioTestContainer from '/imports/ui/components/audio/audio-test/container';
 import cx from 'classnames';
 import { styles } from './styles';
 import PermissionsOverlay from "../permissions-overlay/component";
 import Modal from "../../modal/simple/component";
-//import AudioStreamVolume from "../audio-stream-volume/component";
-//import Help from "../help/component";
 
 const propTypes = {
   intl: PropTypes.object.isRequired,
@@ -110,7 +107,7 @@ class AudioSettingsRoomModal extends React.Component {
   renderContent() {
     const {
       intl,
-//      closeModal,
+      closeModal,
     } = this.props;
 
     return (
@@ -172,6 +169,15 @@ class AudioSettingsRoomModal extends React.Component {
             </div>
           </div>
         </div>
+
+        <div className={styles.enterAudio}>
+          <Button
+              size="md"
+              color="primary"
+              label={intl.formatMessage(intlMessages.okLabel)}
+              onClick={closeModal}
+          />
+        </div>
       </div>
     );
   }
@@ -192,6 +198,7 @@ class AudioSettingsRoomModal extends React.Component {
               onRequestClose={closeModal}
               hideBorder
               contentLabel={intl.formatMessage(intlMessages.ariaModalTitle)}
+              title={intl.formatMessage(intlMessages.ariaModalTitle)}
           >
           <div className={styles.content}>
             {this.renderContent()}
