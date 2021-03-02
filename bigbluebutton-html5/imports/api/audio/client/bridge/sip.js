@@ -598,7 +598,7 @@ class SIPSession {
       );
 
       if (this.inputDeviceId) {
-        matchConstraints.deviceId = { exact: this.inputDeviceId };
+        matchConstraints.deviceId = this.inputDeviceId;
       }
 
       const inviterOptions = {
