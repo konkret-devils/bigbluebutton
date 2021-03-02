@@ -207,9 +207,14 @@ export default class Button extends BaseButton {
 
     if (iconName) {
       return (<Icon className={styles.icon} iconName={iconName} />);
-    } if (customIcon) {
-      let svgIconName="Mixer";
-      return (<img src={customIcon} className={styles.svgIcon} alt={svgIconName}/>);
+    }
+
+    if (customIcon) {
+      if (customIcon.toString().startsWith('svgs/')) {
+        let svgIconName = "Mixer";
+        return (<img src={customIcon} className={styles.svgIcon} alt={svgIconName}/>);
+      }
+      return customIcon;
     }
 
     return null;
