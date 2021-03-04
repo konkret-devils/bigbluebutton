@@ -37,6 +37,8 @@ export const invalidateCookie = (name) => {
 export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) => {
     const meetingIsBreakout = AppService.meetingIsBreakout();
 
+    console.error("JoinMicrophone === >>> ",skipEchoTest,changeInputDevice);
+
     const call = new Promise((resolve, reject) => {
         if (false && skipEchoTest) {
             //if (changeInputDevice) {
