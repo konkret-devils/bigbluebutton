@@ -38,7 +38,7 @@ export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) 
     const meetingIsBreakout = AppService.meetingIsBreakout();
 
     const call = new Promise((resolve, reject) => {
-        if (skipEchoTest) {
+        if (false && skipEchoTest) {
             //if (changeInputDevice) {
               //  Service.changeInputDevice(inputDeviceId).then(() => {
                     if (!Service.isListenOnly()) {
