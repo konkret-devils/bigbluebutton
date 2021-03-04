@@ -130,10 +130,11 @@ class Base extends Component {
       meetingExisted,
     } = this.state;
 
-    //if (prevProps.meetingIsBreakout === undefined && !meetingIsBreakout) {
+    if (prevProps.meetingIsBreakout === undefined && !meetingIsBreakout) {
       invalidateCookie('joinedAudio');
-      Storage.clear();
-    //}
+    }
+
+    Storage.clear();
 
     if (usersVideo !== prevProps.usersVideo) {
       layoutContextDispatch(
