@@ -134,7 +134,7 @@ class Base extends Component {
       invalidateCookie('joinedAudio');
     }
 
-    Storage.clear();
+    //Storage.clear();
 
     if (usersVideo !== prevProps.usersVideo) {
       layoutContextDispatch(
