@@ -43,14 +43,13 @@ export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) 
         if (skipEchoTest) {
             const { inputAudioId } = getcookieData();
             console.log(getcookieData(),inputAudioId);
-            if (changeInputDevice) {
+            if (changeInputDevice && inputAudioId) {
                 Service.changeInputDevice(inputAudioId).then(() => {
                     if (!Service.isListenOnly()) {
-                        return Service.exitAudio()
-                            .then(() => Service.updateAudioConstraints(Settings.application.microphoneConstraints)
-                                .then(() => Service.joinMicrophone()));
+                        return Service.updateAudioConstraints(Settings.application.microphoneConstraints)
+                                .then(() => Service.joinMicrophone());
                     }
-                    return Promise.resolve(inputDeviceId);
+                    return Promise.resolve(inputAudioId);
                 });
             } else {
                 resolve(Service.joinMicrophone());
