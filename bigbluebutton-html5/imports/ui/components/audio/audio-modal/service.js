@@ -40,18 +40,19 @@ export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) 
     console.error("JoinMicrophone === >>> ",skipEchoTest,changeInputDevice);
 
     const call = new Promise((resolve, reject) => {
-        if (false && skipEchoTest) {
-            //if (changeInputDevice) {
-              //  Service.changeInputDevice(inputDeviceId).then(() => {
+        if (skipEchoTest) {
+            if (changeInputDevice) {
+                Service.changeInputDevice(inputDeviceId).then(() => {
                     if (!Service.isListenOnly()) {
                         return Service.exitAudio()
                             .then(() => Service.updateAudioConstraints(Settings.application.microphoneConstraints)
                                 .then(() => Service.joinMicrophone()));
                     }
-                //    return Promise.resolve(inputDeviceId);
-               // });
-            //}
-            //resolve(Service.joinMicrophone());
+                    return Promise.resolve(inputDeviceId);
+                });
+            } else {
+                resolve(Service.joinMicrophone());
+            }
         } else {
             resolve(Service.transferCall());
         }
