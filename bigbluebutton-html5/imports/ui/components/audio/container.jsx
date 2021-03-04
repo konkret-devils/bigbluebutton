@@ -181,7 +181,7 @@ export default lockContextContainer(withModalMounter(injectIntl(withTracker(({ m
       Session.set('audioModalIsOpen', true);
       if (enableVideo && autoShareWebcam) {
         openAudioModal().then(() => { openVideoPreviewModal(); didMountAutoJoin = true; });
-      } else if (!(joinedAudio && meetingIsBreakout)) {
+      } else if (!joinedAudio || meetingIsBreakout) {
         openAudioModal();
         didMountAutoJoin = true;
       }
