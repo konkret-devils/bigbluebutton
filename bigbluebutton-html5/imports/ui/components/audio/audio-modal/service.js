@@ -1,8 +1,6 @@
-//@many thanks to mariogasparoni
 import { showModal } from '/imports/ui/components/modal/service';
 import Service from '../service';
 import AppService from '/imports/ui/components/app/service';
-import Settings from "../../../services/settings";
 
 export const getcookieData = () => {
     const cookiesString = document.cookie;
@@ -37,23 +35,9 @@ export const invalidateCookie = (name) => {
 export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) => {
     const meetingIsBreakout = AppService.meetingIsBreakout();
 
-    console.error("JoinMicrophone === >>> ",skipEchoTest,changeInputDevice);
-
     const call = new Promise((resolve, reject) => {
         if (skipEchoTest) {
-            const { inputAudioId } = getcookieData();
-            console.log(getcookieData(),inputAudioId);
-            if (changeInputDevice && inputAudioId) {
-                Service.changeInputDevice(inputAudioId).then(() => {
-                    if (!Service.isListenOnly()) {
-                        return Service.updateAudioConstraints(Settings.application.microphoneConstraints)
-                                .then(() => Service.joinMicrophone());
-                    }
-                    return Promise.resolve(inputAudioId);
-                });
-            } else {
-                resolve(Service.joinMicrophone());
-            }
+            resolve(Service.joinMicrophone());
         } else {
             resolve(Service.transferCall());
         }

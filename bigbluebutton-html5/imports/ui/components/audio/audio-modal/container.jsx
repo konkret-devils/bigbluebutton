@@ -6,7 +6,6 @@ import getFromUserSettings from '/imports/ui/services/users-settings';
 import AudioModal from './component';
 import Meetings from '/imports/api/meetings';
 import Auth from '/imports/ui/services/auth';
-import deviceInfo from '/imports/utils/deviceInfo';
 import lockContextContainer from '/imports/ui/components/lock-viewers/context/container';
 import AudioError from '/imports/ui/services/audio-manager/error-codes';
 import AppService from '/imports/ui/components/app/service';
@@ -22,12 +21,13 @@ import Service from '../service';
 
 const AudioModalContainer = props => <AudioModal {...props} />;
 
+
 const APP_CONFIG = Meteor.settings.public.app;
 
 const invalidDialNumbers = ['0', '613-555-1212', '613-555-1234', '0000'];
 const isRTL = document.documentElement.getAttribute('dir') === 'rtl';
 
-export default lockContextContainer(withModalMounter(withTracker(({ mountModal, userLocks }) => {
+export default lockContextContainer(withModalMounter(withTracker(({ userLocks }) => {
   const listenOnlyMode = getFromUserSettings('bbb_listen_only_mode', APP_CONFIG.listenOnlyMode);
   const forceListenOnly = getFromUserSettings('bbb_force_listen_only', APP_CONFIG.forceListenOnly);
   const skipCheck = getFromUserSettings('bbb_skip_check_audio', APP_CONFIG.skipCheck);
@@ -56,8 +56,6 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
 
   const forceListenOnlyAttendee = forceListenOnly && !Service.isUserModerator();
 
-  const joinFullAudioEchoTest = joinFullAudioImmediately
-
   return ({
     joinedAudio,
     meetingIsBreakout,
@@ -74,15 +72,13 @@ export default lockContextContainer(withModalMounter(withTracker(({ mountModal, 
     isEchoTest: Service.isEchoTest(),
     inputDeviceId: Service.inputDeviceId(),
     outputDeviceId: Service.outputDeviceId(),
-    showPermissionsOverlay: Service.isWaitingPermissions(),
+    showPermissionsOvelay: Service.isWaitingPermissions(),
     listenOnlyMode,
-    skipCheck,
     formattedDialNum,
     formattedTelVoice,
     combinedDialInNum,
     audioLocked: userLocks.userMic,
     joinFullAudioImmediately,
-    joinFullAudioEchoTest,
     forceListenOnlyAttendee,
     isIOSChrome: browser().name === 'crios',
     isMobileNative: navigator.userAgent.toLowerCase().includes('bbbnative'),

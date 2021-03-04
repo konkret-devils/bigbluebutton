@@ -7,6 +7,7 @@ import lockContextContainer from '/imports/ui/components/lock-viewers/context/co
 import logger from '/imports/startup/client/logger';
 import Auth from '/imports/ui/services/auth';
 import Users from '/imports/api/users';
+import Storage from '/imports/ui/services/storage/session';
 import AudioControls from './component';
 import AudioModalContainer from '../audio-modal/container';
 import AudioSettingsRoomModalContainer from '../audio-settings-room/container';

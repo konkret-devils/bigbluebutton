@@ -10,7 +10,6 @@ import Modal from '/imports/ui/components/modal/fullscreen/component';
 import { withModalMounter } from '/imports/ui/components/modal/service';
 import HoldButton from '/imports/ui/components/presentation/presentation-toolbar/zoom-tool/holdButton/component';
 import SortList from './sort-user-list/component';
-import { hiddenByMagicCap } from '/imports/ui/services/users-settings';
 import styles from './styles';
 
 const ROLE_MODERATOR = Meteor.settings.public.user.role_moderator;
@@ -108,15 +107,22 @@ const intlMessages = defineMessages({
     id: 'app.createBreakoutRoom.numberOfRoomsError',
     description: 'Label an error message',
   },
+  you: {
+    id: 'app.userList.you',
+    description: 'Text for identifying your user',
+  },
 });
 
-const BREAKOUT_LIM = Meteor.settings.public.app.breakoutRoomLimit;
+const BREAKOUT_LIM = Meteor.settings.public.app.breakouts.breakoutRoomLimit;
 const MIN_BREAKOUT_ROOMS = 2;
 const MAX_BREAKOUT_ROOMS = BREAKOUT_LIM > MIN_BREAKOUT_ROOMS ? BREAKOUT_LIM : MIN_BREAKOUT_ROOMS;
 
 const propTypes = {
-  intl: PropTypes.object.isRequired,
+  intl: PropTypes.shape({
+    formatMessage: PropTypes.func.isRequired,
+  }).isRequired,
   isInvitation: PropTypes.bool.isRequired,
+  isMe: PropTypes.func.isRequired,
   meetingName: PropTypes.string.isRequired,
   users: PropTypes.arrayOf(PropTypes.object).isRequired,
   createBreakoutRoom: PropTypes.func.isRequired,
@@ -296,15 +302,15 @@ class BreakoutRoom extends PureComponent {
   setRoomUsers() {
     const { users, getUsersNotAssigned } = this.props;
     const { users: stateUsers } = this.state;
-    const stateUsersId = stateUsers.filter(user => !hiddenByMagicCap(user)).map(user => user.userId);
+    const stateUsersId = stateUsers.map(user => user.userId);
     const roomUsers = getUsersNotAssigned(users)
-      .filter(user => !stateUsersId.includes(user.userId) && !hiddenByMagicCap(user))
-      .map(user => ({
-        userId: user.userId,
-        userName: user.name,
-        isModerator: user.role === ROLE_MODERATOR,
-        room: 0,
-      }));
+        .filter(user => !stateUsersId.includes(user.userId))
+        .map(user => ({
+          userId: user.userId,
+          userName: user.name,
+          isModerator: user.role === ROLE_MODERATOR,
+          room: 0,
+        }));
 
     this.setState({
       users: [
@@ -324,7 +330,7 @@ class BreakoutRoom extends PureComponent {
 
   getUserByRoom(room) {
     const { users } = this.state;
-    return users.filter(user => user.room === room && !hiddenByMagicCap(user));
+    return users.filter(user => user.room === room);
   }
 
   getUsersByRoomSequence(sequence) {
@@ -402,7 +408,7 @@ class BreakoutRoom extends PureComponent {
     this.setState({
       numberOfRooms,
       numberOfRoomsIsValid: numberOfRooms <= MAX_BREAKOUT_ROOMS
-      && numberOfRooms >= MIN_BREAKOUT_ROOMS,
+          && numberOfRooms >= MIN_BREAKOUT_ROOMS,
     });
   }
 
@@ -413,8 +419,8 @@ class BreakoutRoom extends PureComponent {
       numberOfRooms,
     } = this.state;
     const rooms = (numberOfRooms > MAX_BREAKOUT_ROOMS
-      || numberOfRooms < MIN_BREAKOUT_ROOMS)
-      ? 0 : numberOfRooms;
+        || numberOfRooms < MIN_BREAKOUT_ROOMS)
+        ? 0 : numberOfRooms;
     const allowDrop = (ev) => {
       ev.preventDefault();
     };
@@ -427,32 +433,32 @@ class BreakoutRoom extends PureComponent {
     };
 
     return (
-      <div className={styles.boxContainer} key="rooms-grid-">
-        <div className={!valid ? styles.changeToWarn : null}>
-          <p className={styles.freeJoinLabel}>
-            {intl.formatMessage(intlMessages.notAssigned, { 0: this.getUserByRoom(0).length })}
-          </p>
-          <div className={styles.breakoutBox} onDrop={drop(0)} onDragOver={allowDrop}>
-            {this.renderUserItemByRoom(0)}
-          </div>
-          <span className={valid ? styles.dontShow : styles.leastOneWarn}>
+        <div className={styles.boxContainer} key="rooms-grid-">
+          <div className={!valid ? styles.changeToWarn : null}>
+            <p className={styles.freeJoinLabel}>
+              {intl.formatMessage(intlMessages.notAssigned, { 0: this.getUserByRoom(0).length })}
+            </p>
+            <div className={styles.breakoutBox} onDrop={drop(0)} onDragOver={allowDrop}>
+              {this.renderUserItemByRoom(0)}
+            </div>
+            <span className={valid ? styles.dontShow : styles.leastOneWarn}>
             {intl.formatMessage(intlMessages.leastOneWarnBreakout)}
           </span>
+          </div>
+          {
+            _.range(1, rooms + 1).map(value => (
+                <div key={`room-${value}`}>
+                  <p className={styles.freeJoinLabel}>
+                    {intl.formatMessage(intlMessages.roomLabel, { 0: (value) })}
+                  </p>
+                  <div className={styles.breakoutBox} onDrop={drop(value)} onDragOver={allowDrop}>
+                    {this.renderUserItemByRoom(value)}
+                    {isInvitation && this.renderJoinedUsers(value)}
+                  </div>
+                </div>
+            ))
+          }
         </div>
-        {
-          _.range(1, rooms + 1).map(value => (
-            <div key={`room-${value}`}>
-              <p className={styles.freeJoinLabel}>
-                {intl.formatMessage(intlMessages.roomLabel, { 0: (value) })}
-              </p>
-              <div className={styles.breakoutBox} onDrop={drop(value)} onDragOver={allowDrop}>
-                {this.renderUserItemByRoom(value)}
-                {isInvitation && this.renderJoinedUsers(value)}
-              </div>
-            </div>
-          ))
-        }
-      </div>
     );
   }
 
@@ -469,98 +475,98 @@ class BreakoutRoom extends PureComponent {
     if (isInvitation) return null;
 
     return (
-      <React.Fragment key="breakout-form">
-        <div className={styles.breakoutSettings}>
-          <div>
-            <p
-              className={cx(styles.labelText, !numberOfRoomsIsValid
-                && styles.withError)}
-              aria-hidden
-            >
-              {intl.formatMessage(intlMessages.numberOfRooms)}
-            </p>
-            <select
-              id="numberOfRooms"
-              name="numberOfRooms"
-              className={cx(styles.inputRooms, !numberOfRoomsIsValid
-                && styles.errorBorder)}
-              value={numberOfRooms}
-              onChange={this.changeNumberOfRooms}
-              aria-label={intl.formatMessage(intlMessages.numberOfRooms)}
-            >
-              {
-                _.range(MIN_BREAKOUT_ROOMS, MAX_BREAKOUT_ROOMS + 1).map(item => (<option key={_.uniqueId('value-')}>{item}</option>))
-              }
-            </select>
-          </div>
-          <label htmlFor="breakoutRoomTime">
-            <p className={styles.labelText} aria-hidden>
-              {intl.formatMessage(intlMessages.duration)}
-            </p>
-            <div className={styles.durationArea}>
-              <input
-                type="number"
-                className={styles.duration}
-                min="1"
-                value={durationTime}
-                onChange={this.changeDurationTime}
-                onBlur={this.blurDurationTime}
-                aria-label={intl.formatMessage(intlMessages.duration)}
-              />
-              <HoldButton
-                key="decrease-breakout-time"
-                exec={this.decreaseDurationTime}
-                minBound={MIN_BREAKOUT_ROOMS}
-                value={durationTime}
-                className={styles.btnStyle}
+        <React.Fragment key="breakout-form">
+          <div className={styles.breakoutSettings}>
+            <div>
+              <p
+                  className={cx(styles.labelText, !numberOfRoomsIsValid
+                      && styles.withError)}
+                  aria-hidden
               >
-                <Button
-                  label={intl.formatMessage(intlMessages.minusRoomTime)}
-                  aria-label={
-                    `${intl.formatMessage(intlMessages.minusRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime - 1 })}`
-                  }
-                  icon="substract"
-                  onClick={() => {}}
-                  hideLabel
-                  circle
-                  size="sm"
-                />
-              </HoldButton>
-              <HoldButton
-                key="increase-breakout-time"
-                exec={this.increaseDurationTime}
-                className={styles.btnStyle}
+                {intl.formatMessage(intlMessages.numberOfRooms)}
+              </p>
+              <select
+                  id="numberOfRooms"
+                  name="numberOfRooms"
+                  className={cx(styles.inputRooms, !numberOfRoomsIsValid
+                      && styles.errorBorder)}
+                  value={numberOfRooms}
+                  onChange={this.changeNumberOfRooms}
+                  aria-label={intl.formatMessage(intlMessages.numberOfRooms)}
               >
-                <Button
-                  label={intl.formatMessage(intlMessages.addRoomTime)}
-                  aria-label={
-                    `${intl.formatMessage(intlMessages.addRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime + 1 })}`
-                  }
-                  icon="add"
-                  onClick={() => {}}
-                  hideLabel
-                  circle
-                  size="sm"
-                />
-              </HoldButton>
+                {
+                  _.range(MIN_BREAKOUT_ROOMS, MAX_BREAKOUT_ROOMS + 1).map(item => (<option key={_.uniqueId('value-')}>{item}</option>))
+                }
+              </select>
             </div>
-          </label>
-          <Button
-            data-test="randomlyAssign"
-            label={intl.formatMessage(intlMessages.randomlyAssign)}
-            className={styles.randomlyAssignBtn}
-            onClick={this.onAssignRandomly}
-            size="sm"
-            color="default"
-            disabled={!numberOfRoomsIsValid}
-          />
-        </div>
-        <span className={!numberOfRoomsIsValid
-          ? styles.withError : styles.dontShow}
-        >
+            <label htmlFor="breakoutRoomTime">
+              <p className={styles.labelText} aria-hidden>
+                {intl.formatMessage(intlMessages.duration)}
+              </p>
+              <div className={styles.durationArea}>
+                <input
+                    type="number"
+                    className={styles.duration}
+                    min="1"
+                    value={durationTime}
+                    onChange={this.changeDurationTime}
+                    onBlur={this.blurDurationTime}
+                    aria-label={intl.formatMessage(intlMessages.duration)}
+                />
+                <HoldButton
+                    key="decrease-breakout-time"
+                    exec={this.decreaseDurationTime}
+                    minBound={MIN_BREAKOUT_ROOMS}
+                    value={durationTime}
+                    className={styles.btnStyle}
+                >
+                  <Button
+                      label={intl.formatMessage(intlMessages.minusRoomTime)}
+                      aria-label={
+                        `${intl.formatMessage(intlMessages.minusRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime - 1 })}`
+                      }
+                      icon="substract"
+                      onClick={() => {}}
+                      hideLabel
+                      circle
+                      size="sm"
+                  />
+                </HoldButton>
+                <HoldButton
+                    key="increase-breakout-time"
+                    exec={this.increaseDurationTime}
+                    className={styles.btnStyle}
+                >
+                  <Button
+                      label={intl.formatMessage(intlMessages.addRoomTime)}
+                      aria-label={
+                        `${intl.formatMessage(intlMessages.addRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime + 1 })}`
+                      }
+                      icon="add"
+                      onClick={() => {}}
+                      hideLabel
+                      circle
+                      size="sm"
+                  />
+                </HoldButton>
+              </div>
+            </label>
+            <Button
+                data-test="randomlyAssign"
+                label={intl.formatMessage(intlMessages.randomlyAssign)}
+                className={styles.randomlyAssignBtn}
+                onClick={this.onAssignRandomly}
+                size="sm"
+                color="default"
+                disabled={!numberOfRoomsIsValid}
+            />
+          </div>
+          <span className={!numberOfRoomsIsValid
+              ? styles.withError : styles.dontShow}
+          >
           {intl.formatMessage(intlMessages.numberOfRoomsIsValid)}
         </span>
-      </React.Fragment>
+        </React.Fragment>
     );
   }
 
@@ -573,14 +579,14 @@ class BreakoutRoom extends PureComponent {
     const { isInvitation } = this.props;
 
     return (
-      <SortList
-        confirm={() => this.setState({ formFillLevel: 2 })}
-        users={users}
-        room={roomSelected}
-        breakoutJoinedUsers={isInvitation && breakoutJoinedUsers}
-        onCheck={this.changeUserRoom}
-        onUncheck={userId => this.changeUserRoom(userId, 0)}
-      />
+        <SortList
+            confirm={() => this.setState({ formFillLevel: 2 })}
+            users={users}
+            room={roomSelected}
+            breakoutJoinedUsers={isInvitation && breakoutJoinedUsers}
+            onCheck={this.changeUserRoom}
+            onUncheck={userId => this.changeUserRoom(userId, 0)}
+        />
     );
   }
 
@@ -592,36 +598,36 @@ class BreakoutRoom extends PureComponent {
       record,
     } = this.state;
     return (
-      <div className={styles.checkBoxesContainer} key="breakout-checkboxes">
-        <label htmlFor="freeJoinCheckbox" className={styles.freeJoinLabel} key="free-join-breakouts">
-          <input
-            type="checkbox"
-            id="freeJoinCheckbox"
-            className={styles.freeJoinCheckbox}
-            onChange={this.setFreeJoin}
-            checked={freeJoin}
-            aria-label={intl.formatMessage(intlMessages.freeJoinLabel)}
-          />
-          <span aria-hidden>{intl.formatMessage(intlMessages.freeJoinLabel)}</span>
-        </label>
-        {
-          isBreakoutRecordable ? (
-            <label htmlFor="recordBreakoutCheckbox" className={styles.freeJoinLabel} key="record-breakouts">
-              <input
-                id="recordBreakoutCheckbox"
+        <div className={styles.checkBoxesContainer} key="breakout-checkboxes">
+          <label htmlFor="freeJoinCheckbox" className={styles.freeJoinLabel} key="free-join-breakouts">
+            <input
                 type="checkbox"
+                id="freeJoinCheckbox"
                 className={styles.freeJoinCheckbox}
-                onChange={this.setRecord}
-                checked={record}
-                aria-label={intl.formatMessage(intlMessages.record)}
-              />
-              <span aria-hidden>
+                onChange={this.setFreeJoin}
+                checked={freeJoin}
+                aria-label={intl.formatMessage(intlMessages.freeJoinLabel)}
+            />
+            <span aria-hidden>{intl.formatMessage(intlMessages.freeJoinLabel)}</span>
+          </label>
+          {
+            isBreakoutRecordable ? (
+                <label htmlFor="recordBreakoutCheckbox" className={styles.freeJoinLabel} key="record-breakouts">
+                  <input
+                      id="recordBreakoutCheckbox"
+                      type="checkbox"
+                      className={styles.freeJoinCheckbox}
+                      onChange={this.setRecord}
+                      checked={record}
+                      aria-label={intl.formatMessage(intlMessages.record)}
+                  />
+                  <span aria-hidden>
                 {intl.formatMessage(intlMessages.record)}
               </span>
-            </label>
-          ) : null
-        }
-      </div>
+                </label>
+            ) : null
+          }
+        </div>
     );
   }
 
@@ -630,6 +636,9 @@ class BreakoutRoom extends PureComponent {
       valid,
       seletedId,
     } = this.state;
+
+    const { intl, isMe } = this.props;
+
     const dragStart = (ev) => {
       ev.dataTransfer.setData('text', ev.target.id);
       this.setState({ seletedId: ev.target.id });
@@ -645,40 +654,41 @@ class BreakoutRoom extends PureComponent {
     };
 
     return this.getUserByRoom(room)
-      .map(user => (
-        <p
-          id={user.userId}
-          key={user.userId}
-          className={cx(
-            styles.roomUserItem,
-            seletedId === user.userId ? styles.selectedItem : null,
-          )
-          }
-          draggable
-          onDragStart={dragStart}
-          onDragEnd={dragEnd}
-        >
-          {user.userName}
-        </p>));
+        .map(user => (
+            <p
+                id={user.userId}
+                key={user.userId}
+                className={cx(
+                    styles.roomUserItem,
+                    seletedId === user.userId ? styles.selectedItem : null,
+                )
+                }
+                draggable
+                onDragStart={dragStart}
+                onDragEnd={dragEnd}
+            >
+              {user.userName}
+              <i>{(isMe(user.userId)) ? ` (${intl.formatMessage(intlMessages.you)})` : ''}</i>
+            </p>));
   }
 
   renderJoinedUsers(room) {
     return this.getUsersByRoomSequence(room)
-      .map(user => (
-        <p
-          id={user.userId}
-          key={user.userId}
-          disabled
-          className={cx(
-            styles.roomUserItem,
-            styles.disableItem,
-          )
-          }
-        >
-          {user.name}
-          <span className={styles.lockIcon} />
-        </p>
-      ));
+        .map(user => (
+            <p
+                id={user.userId}
+                key={user.userId}
+                disabled
+                className={cx(
+                    styles.roomUserItem,
+                    styles.disableItem,
+                )
+                }
+            >
+              {user.name}
+              <span className={styles.lockIcon} />
+            </p>
+        ));
   }
 
   renderRoomSortList() {
@@ -686,28 +696,28 @@ class BreakoutRoom extends PureComponent {
     const { numberOfRooms } = this.state;
     const onClick = roomNumber => this.setState({ formFillLevel: 3, roomSelected: roomNumber });
     return (
-      <div className={styles.listContainer}>
+        <div className={styles.listContainer}>
         <span>
           {
             new Array(numberOfRooms).fill(1).map((room, idx) => (
-              <div className={styles.roomItem}>
-                <h2 className={styles.itemTitle}>
-                  {intl.formatMessage(intlMessages.breakoutRoomLabel, { 0: idx + 1 })}
-                </h2>
-                <Button
-                  className={styles.itemButton}
-                  label={intl.formatMessage(intlMessages.addParticipantLabel)}
-                  size="lg"
-                  ghost
-                  color="primary"
-                  onClick={() => onClick(idx + 1)}
-                />
-              </div>
+                <div className={styles.roomItem}>
+                  <h2 className={styles.itemTitle}>
+                    {intl.formatMessage(intlMessages.breakoutRoomLabel, { 0: idx + 1 })}
+                  </h2>
+                  <Button
+                      className={styles.itemButton}
+                      label={intl.formatMessage(intlMessages.addParticipantLabel)}
+                      size="lg"
+                      ghost
+                      color="primary"
+                      onClick={() => onClick(idx + 1)}
+                  />
+                </div>
             ))
           }
         </span>
-        { isInvitation || this.renderButtonSetLevel(1, intl.formatMessage(intlMessages.backLabel))}
-      </div>
+          { isInvitation || this.renderButtonSetLevel(1, intl.formatMessage(intlMessages.backLabel))}
+        </div>
     );
   }
 
@@ -720,18 +730,18 @@ class BreakoutRoom extends PureComponent {
       numberOfRoomsIsValid,
     } = this.state;
     return (
-      <React.Fragment>
-        {!valid
+        <React.Fragment>
+          {!valid
           && (
-          <span className={styles.withError}>
+              <span className={styles.withError}>
             {intl.formatMessage(intlMessages.leastOneWarnBreakout)}
           </span>)}
-        {!numberOfRoomsIsValid
+          {!numberOfRoomsIsValid
           && (
-          <span className={styles.withError}>
+              <span className={styles.withError}>
             {intl.formatMessage(intlMessages.numberOfRoomsIsValid)}
           </span>)}
-      </React.Fragment>
+        </React.Fragment>
     );
   }
 
@@ -770,22 +780,22 @@ class BreakoutRoom extends PureComponent {
 
   renderButtonSetLevel(level, label) {
     return (
-      <Button
-        color="primary"
-        size="lg"
-        label={label}
-        onClick={() => this.setState({ formFillLevel: level })}
-        key={this.btnLevelId}
-      />
+        <Button
+            color="primary"
+            size="lg"
+            label={label}
+            onClick={() => this.setState({ formFillLevel: level })}
+            key={this.btnLevelId}
+        />
     );
   }
 
   renderTitle() {
     const { intl } = this.props;
     return (
-      <p className={styles.subTitle}>
-        {intl.formatMessage(intlMessages.breakoutRoomDesc)}
-      </p>
+        <p className={styles.subTitle}>
+          {intl.formatMessage(intlMessages.breakoutRoomDesc)}
+        </p>
     );
   }
 
@@ -801,32 +811,32 @@ class BreakoutRoom extends PureComponent {
     const isMobileBrowser = BROWSER_RESULTS.mobile || BROWSER_RESULTS.os.includes('Android');
 
     return (
-      <Modal
-        title={
-          isInvitation
-            ? intl.formatMessage(intlMessages.invitationTitle)
-            : intl.formatMessage(intlMessages.breakoutRoomTitle)
-        }
-        confirm={
-          {
-            label: isInvitation
-              ? intl.formatMessage(intlMessages.invitationConfirm)
-              : intl.formatMessage(intlMessages.confirmButton),
-            callback: isInvitation ? this.onInviteBreakout : this.onCreateBreakouts,
-            disabled: !valid || !numberOfRoomsIsValid,
-          }
-        }
-        dismiss={{
-          callback: this.handleDismiss,
-          label: intl.formatMessage(intlMessages.dismissLabel),
-        }}
-        preventClosing={preventClosing}
-      >
-        <div className={styles.content}>
-          {isInvitation || this.renderTitle()}
-          {isMobileBrowser ? this.renderMobile() : this.renderDesktop()}
-        </div>
-      </Modal>
+        <Modal
+            title={
+              isInvitation
+                  ? intl.formatMessage(intlMessages.invitationTitle)
+                  : intl.formatMessage(intlMessages.breakoutRoomTitle)
+            }
+            confirm={
+              {
+                label: isInvitation
+                    ? intl.formatMessage(intlMessages.invitationConfirm)
+                    : intl.formatMessage(intlMessages.confirmButton),
+                callback: isInvitation ? this.onInviteBreakout : this.onCreateBreakouts,
+                disabled: !valid || !numberOfRoomsIsValid,
+              }
+            }
+            dismiss={{
+              callback: this.handleDismiss,
+              label: intl.formatMessage(intlMessages.dismissLabel),
+            }}
+            preventClosing={preventClosing}
+        >
+          <div className={styles.content}>
+            {isInvitation || this.renderTitle()}
+            {isMobileBrowser ? this.renderMobile() : this.renderDesktop()}
+          </div>
+        </Modal>
     );
   }
 }

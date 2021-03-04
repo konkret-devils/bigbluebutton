@@ -63,37 +63,43 @@ const amIModerator = () => {
   return User.role === ROLE_MODERATOR;
 };
 
+const checkInviteModerators = () => {
+  const BREAKOUTS_CONFIG = Meteor.settings.public.app.breakouts;
+
+  return !((amIModerator() && !BREAKOUTS_CONFIG.sendInvitationToIncludedModerators));
+};
+
 const getBreakoutByUserId = userId => Breakouts.find(
-  { 'users.userId': userId },
-  { fields: { timeRemaining: 0 } },
+    { 'users.userId': userId },
+    { fields: { timeRemaining: 0 } },
 ).fetch();
 
 const getBreakoutByUser = user => Breakouts.findOne({ users: user });
 
 const getUsersFromBreakouts = breakoutsArray => breakoutsArray
-  .map(breakout => breakout.users)
-  .reduce((acc, usersArray) => [...acc, ...usersArray], []);
+    .map(breakout => breakout.users)
+    .reduce((acc, usersArray) => [...acc, ...usersArray], []);
 
 const filterUserURLs = userId => breakoutUsersArray => breakoutUsersArray
-  .filter(user => user.userId === userId);
+    .filter(user => user.userId === userId);
 
 const getLastURLInserted = breakoutURLArray => breakoutURLArray
-  .sort((a, b) => a.insertedTime - b.insertedTime).pop();
+    .sort((a, b) => a.insertedTime - b.insertedTime).pop();
 
 const getBreakoutUserByUserId = userId => fp.pipe(
-  getBreakoutByUserId,
-  getUsersFromBreakouts,
-  filterUserURLs(userId),
-  getLastURLInserted,
+    getBreakoutByUserId,
+    getUsersFromBreakouts,
+    filterUserURLs(userId),
+    getLastURLInserted,
 )(userId);
 
 const getBreakouts = () => Breakouts.find({}, { sort: { sequence: 1 } }).fetch();
 const getBreakoutsNoTime = () => Breakouts.find(
-  {},
-  {
-    sort: { sequence: 1 },
-    fields: { timeRemaining: 0 },
-  },
+    {},
+    {
+      sort: { sequence: 1 },
+      fields: { timeRemaining: 0 },
+    },
 ).fetch();
 
 const getBreakoutUserIsIn = userId => Breakouts.findOne({ 'joinedUsers.userId': new RegExp(`^${userId}`) }, { fields: { sequence: 1 } });
@@ -121,4 +127,5 @@ export default {
   getBreakoutByUserId,
   getBreakoutUserIsIn,
   isUserInBreakoutRoom,
+  checkInviteModerators,
 };
