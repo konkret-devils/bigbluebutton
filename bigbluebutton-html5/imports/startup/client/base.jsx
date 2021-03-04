@@ -131,8 +131,8 @@ class Base extends Component {
     } = this.state;
 
     if (prevProps.meetingIsBreakout === undefined && !meetingIsBreakout) {
-      invalidateCookie('joinedAudio');
-      Storage.clear();
+      //invalidateCookie('joinedAudio');
+      //Storage.clear();
     }
 
     if (usersVideo !== prevProps.usersVideo) {
