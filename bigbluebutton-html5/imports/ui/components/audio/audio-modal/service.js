@@ -2,6 +2,7 @@
 import { showModal } from '/imports/ui/components/modal/service';
 import Service from '../service';
 import AppService from '/imports/ui/components/app/service';
+import Settings from "../../../services/settings";
 
 export const getcookieData = () => {
     const cookiesString = document.cookie;
@@ -38,7 +39,17 @@ export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) 
 
     const call = new Promise((resolve, reject) => {
         if (skipEchoTest) {
-            resolve(Service.joinMicrophone());
+            //if (changeInputDevice) {
+              //  Service.changeInputDevice(inputDeviceId).then(() => {
+                    if (!Service.isListenOnly()) {
+                        return Service.exitAudio()
+                            .then(() => Service.updateAudioConstraints(Settings.application.microphoneConstraints)
+                                .then(() => Service.joinMicrophone()));
+                    }
+                //    return Promise.resolve(inputDeviceId);
+               // });
+            //}
+            //resolve(Service.joinMicrophone());
         } else {
             resolve(Service.transferCall());
         }
