@@ -54,7 +54,7 @@ export default lockContextContainer(withModalMounter(withTracker(({ userLocks })
   const joinFullAudioImmediately = (autoJoin && (skipCheck || skipCheckOnJoin && !getEchoTest))
       || (skipCheck || skipCheckOnJoin && !getEchoTest);
 
-  const forceListenOnlyAttendee = forceListenOnly && !Service.isUserModerator();
+  const forceListenOnlyAttendee = forceListenOnly && (!Service.isUserModerator() || meetingIsBreakout);
 
   return ({
     joinedAudio,
