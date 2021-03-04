@@ -172,6 +172,8 @@ export default lockContextContainer(withModalMounter(injectIntl(withTracker(({ m
       Service.changeOutputDevice(document.querySelector('#remote-media').sinkId);
       const enableVideo = getFromUserSettings('bbb_enable_video', KURENTO_CONFIG.enableVideo);
       const autoShareWebcam = getFromUserSettings('bbb_auto_share_webcam', KURENTO_CONFIG.autoShareWebcam);
+      const listenOnlyMode = getFromUserSettings('bbb_listen_only_mode', APP_CONFIG.listenOnlyMode);
+      const forceListenOnly = getFromUserSettings('bbb_force_listen_only', APP_CONFIG.forceListenOnly);
       if ((!autoJoin || didMountAutoJoin)) {
         if (enableVideo && autoShareWebcam) {
           openVideoPreviewModal();
@@ -181,7 +183,7 @@ export default lockContextContainer(withModalMounter(injectIntl(withTracker(({ m
       Session.set('audioModalIsOpen', true);
       if (enableVideo && autoShareWebcam) {
         openAudioModal().then(() => { openVideoPreviewModal(); didMountAutoJoin = true; });
-      } else { //if (!joinedAudio || meetingIsBreakout) {
+      } else if (!listenOnlyMode || !forceListenOnly) { //if (!joinedAudio || meetingIsBreakout) {
         openAudioModal();
         didMountAutoJoin = true;
       }
