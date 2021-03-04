@@ -10,8 +10,8 @@ const ROLE_MODERATOR = USER_CONFIG.role_moderator;
 const DIAL_IN_USER = 'dial-in-user';
 
 const getBreakouts = () => Breakouts.find({ parentMeetingId: Auth.meetingID })
-  .fetch()
-  .sort((a, b) => a.sequence - b.sequence);
+    .fetch()
+    .sort((a, b) => a.sequence - b.sequence);
 
 const currentBreakoutUsers = user => !Breakouts.findOne({
   'joinedUsers.userId': new RegExp(`^${user.userId}`),
@@ -25,7 +25,7 @@ const takePresenterRole = () => makeCall('assignPresenter', Auth.userID);
 
 const amIPresenter = () => {
   const currentUser = Users.findOne({ userId: Auth.userID },
-    { fields: { presenter: 1 } });
+      { fields: { presenter: 1 } });
 
   if (!currentUser) {
     return false;
@@ -36,7 +36,7 @@ const amIPresenter = () => {
 
 const amIModerator = () => {
   const currentUser = Users.findOne({ userId: Auth.userID },
-    { fields: { role: 1 } });
+      { fields: { role: 1 } });
 
   if (!currentUser) {
     return false;
@@ -45,19 +45,23 @@ const amIModerator = () => {
   return currentUser.role === ROLE_MODERATOR;
 };
 
+const isMe = intId => intId === Auth.userID;
+
+
 export default {
   amIPresenter,
   amIModerator,
+  isMe,
   meetingName: () => Meetings.findOne({ meetingId: Auth.meetingID },
-    { fields: { 'meetingProp.name': 1 } }).meetingProp.name,
+      { fields: { 'meetingProp.name': 1 } }).meetingProp.name,
   users: () => Users.find({
     meetingId: Auth.meetingID,
     clientType: { $ne: DIAL_IN_USER },
   }).fetch(),
   isBreakoutEnabled: () => Meetings.findOne({ meetingId: Auth.meetingID },
-    { fields: { 'breakoutProps.enabled': 1 } }).breakoutProps.enabled,
+      { fields: { 'breakoutProps.enabled': 1 } }).breakoutProps.enabled,
   isBreakoutRecordable: () => Meetings.findOne({ meetingId: Auth.meetingID },
-    { fields: { 'breakoutProps.record': 1 } }).breakoutProps.record,
+      { fields: { 'breakoutProps.record': 1 } }).breakoutProps.record,
   toggleRecording: () => makeCall('toggleRecording'),
   createBreakoutRoom: (numberOfRooms, durationInMinutes, record = false) => makeCall('createBreakoutRoom', numberOfRooms, durationInMinutes, record),
   sendInvitation: (breakoutId, userId) => makeCall('requestJoinURL', { breakoutId, userId }),
