@@ -41,8 +41,10 @@ export const joinMicrophone = (skipEchoTest = false, changeInputDevice = false) 
 
     const call = new Promise((resolve, reject) => {
         if (skipEchoTest) {
+            const { inputAudioId } = getcookieData();
+            console.log(getcookieData(),inputAudioId);
             if (changeInputDevice) {
-                Service.changeInputDevice(inputDeviceId).then(() => {
+                Service.changeInputDevice(inputAudioId).then(() => {
                     if (!Service.isListenOnly()) {
                         return Service.exitAudio()
                             .then(() => Service.updateAudioConstraints(Settings.application.microphoneConstraints)
